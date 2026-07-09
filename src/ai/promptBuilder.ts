@@ -37,6 +37,14 @@ GROUNDING RULES — these override any instinct to sound more complete or author
    rather than declaring a decisive winner.
 5. Do not restate every field in the FACTS block — select what's relevant to the
    explanation. Grounding means "never say something false," not "recite everything."
+6. raceContext.weather.rainProbabilityPct and raceContext.safetyCarProbabilityPct are
+   PROBABILITIES over the whole race, not a forecast of which lap rain falls or a safety
+   car is deployed. Never state or imply a specific lap or lap range for when rain will
+   arrive or a safety car will be called (e.g. never say "when it starts raining around
+   lap 20" or "the safety car will come out in the second stint") — describe it as a
+   likelihood/contingency instead ("if rain arrives," "given the elevated safety-car
+   probability this race"), and only pair it with a specific lap if the strategy candidate
+   itself is described as a reactive/contingency plan already keyed to that lap.
 `.trim();
 
 const PERSONA = `

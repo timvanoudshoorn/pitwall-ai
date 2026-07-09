@@ -110,6 +110,67 @@ export const MOCK_CLOSE_CALL: StrategyComparison = {
   ],
 };
 
+/**
+ * A mixed-weather / high-rain-probability case: tests that the prompt's
+ * probability-vs-forecast rule (GROUNDING_RULES #6 in promptBuilder.ts)
+ * has real content to act on — raceContext only gives a whole-race
+ * rainProbabilityPct, never a per-lap forecast, so nothing here should
+ * tempt an explanation into claiming rain arrives at a specific lap.
+ */
+export const MOCK_WET_WEATHER: StrategyComparison = {
+  raceContext: {
+    trackId: 'spa',
+    trackName: 'Spa-Francorchamps',
+    totalLaps: 44,
+    carClass: 'f1_2025',
+    performanceTier: 'midfield',
+    weather: { condition: 'mixed', rainProbabilityPct: 70 },
+    safetyCarProbabilityPct: 45,
+  },
+  strategies: [
+    {
+      id: 'inter-start-hedge',
+      numStops: 1,
+      stints: [
+        { compound: 'intermediate', startLap: 1, endLap: 12, lapsOnTyre: 12, estimatedTyreLifeLaps: 20 },
+        { compound: 'medium', startLap: 13, endLap: 44, lapsOnTyre: 32, estimatedTyreLifeLaps: 28 },
+      ],
+      pitStops: [{ lap: 12, pitLossSeconds: 23.1 }],
+      predictedTotalRaceTimeSeconds: 4711.5,
+      deltaToBestSeconds: 0,
+      confidence: 'low',
+    },
+    {
+      id: 'slick-start-gamble',
+      numStops: 2,
+      stints: [
+        { compound: 'medium', startLap: 1, endLap: 9, lapsOnTyre: 9, estimatedTyreLifeLaps: 28 },
+        { compound: 'intermediate', startLap: 10, endLap: 25, lapsOnTyre: 16, estimatedTyreLifeLaps: 20 },
+        { compound: 'medium', startLap: 26, endLap: 44, lapsOnTyre: 19, estimatedTyreLifeLaps: 28 },
+      ],
+      pitStops: [
+        { lap: 9, pitLossSeconds: 23.1 },
+        { lap: 25, pitLossSeconds: 23.1 },
+      ],
+      predictedTotalRaceTimeSeconds: 4738.9,
+      deltaToBestSeconds: 27.4,
+      confidence: 'low',
+    },
+  ],
+  recommendedStrategyId: 'inter-start-hedge',
+  marginAnalysis: {
+    closestPairIds: ['inter-start-hedge', 'slick-start-gamble'],
+    deltaSeconds: 27.4,
+    isCloseCall: false,
+  },
+  assumptionsUsed: [
+    'tyre_deg_curve_v1_placeholder',
+    'pit_loss_spa_estimated',
+    'wet_weather_pace_model_placeholder',
+    'safety_car_model_default_placeholder',
+  ],
+};
+
 export const MOCK_REFERENCE_FACTS: ReferenceFact[] = [
   {
     topic: 'monaco_overtaking',

@@ -7,6 +7,64 @@ Owner: `ai` teammate. Files: `src/ai/*`.
 
 ---
 
+## 2026-07-10 — Wet-weather / probabilistic-event grounding rule + mock fixture
+
+Picked up the "high safety-car probability and wet-weather scenarios not yet
+specifically prompt-tested" open item from the previous session's log.
+Named-teammate `SendMessage` was reportedly broken (missing `name` param on
+spawn, since fixed by the coordinator with raw IDs) so no reply had landed
+from anyone about this before I resumed; treating it as still open and
+picking it up rather than waiting further.
+
+**Risk identified:** `RaceContext.weather.rainProbabilityPct` and
+`raceContext.safetyCarProbabilityPct` are both whole-race probabilities —
+there is no per-lap forecast field anywhere in `StrategyComparison`. But
+nothing in the original `GROUNDING_RULES` explicitly forbade the model from
+narrating a specific lap as "when the rain arrives" or "when the safety car
+comes out." This is exactly the kind of hallucination the numeric-grounding
+checker (`grounding.ts`) is documented as unable to catch: if the model
+picks a lap number that happens to already be a real pit-lap field (e.g.
+"rain arrives around lap 12" where 12 is a genuine pit-stop lap from FACTS),
+the number passes the allow-list check cleanly even though the *claim*
+attached to it — that the model knows when rain starts — is invented. Same
+failure shape as the undercut/overcut window-vs-full-race disambiguation
+logged previously: a real number, misused.
+
+**Fix:** added rule #6 to `GROUNDING_RULES` in `promptBuilder.ts` —
+explicitly states these two fields are probabilities, not forecasts, bans
+asserting a specific lap for rain arrival or safety-car deployment, and
+carves out the one legitimate case (a strategy that's already described as
+a reactive/contingency plan keyed to a real lap, e.g. "if the safety car
+comes out before lap 35, box early" — this is conditional phrasing about an
+already-real candidate's pit lap, not a claim about when the event itself
+happens, and matches how `AIExplanationScreen.tsx`'s placeholder mock text
+already phrases it).
+
+**Test fixture added:** `MOCK_WET_WEATHER` in `mockFixtures.ts` — Spa,
+`mixed` weather, 70% rain probability, 45% safety-car probability,
+comparing an intermediate-start hedge against a slick-start gamble.
+Verified via smoke test (`npx tsx`, scratch file deleted after):
+- Rule 6 text is present in the constructed system prompt for both
+  `buildRecommendationPrompt` and `buildWhyNotAlternativePrompt` against
+  this fixture.
+- Confirmed the failure mode rule 6 targets is real and un-catchable by
+  `checkGrounding` alone: a synthetic explanation string asserting "rain
+  will arrive around lap 12" (12 being the fixture's genuine pit-stop lap,
+  27.4 being the fixture's genuine delta) produces zero grounding
+  warnings — the numbers are 100% real, so only the new prompt-level rule
+  guards against this, not the post-generation numeric check. This is the
+  same category of defense as the undercut/overcut window-disambiguation
+  fix: prompt-level instruction doing work the numeric checker structurally
+  cannot.
+
+No live API calls made (no `ANTHROPIC_API_KEY` available in this
+environment, consistent with prior sessions) — this is prompt-construction
+and grounding-logic verification only, same testing ceiling as the rest of
+this module's development so far. `tsc --noEmit -p tsconfig.app.json`
+clean for `src/ai/*`.
+
+---
+
 ## 2026-07-10 — Undercut/overcut mechanism wired into why-not-alternative mode
 
 Followed up on the undercut/overcut question from the sim reconciliation

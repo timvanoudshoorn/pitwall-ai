@@ -8,6 +8,7 @@
  * -----------------------------------------------------------------------
  */
 
+import { buildTrackReferenceFacts } from './trackReferenceFacts.ts';
 import type { ReferenceFact, StrategyComparison } from './types.ts';
 
 /** A clear-cut case: 2-stop wins comfortably over a 1-stop. */
@@ -171,13 +172,16 @@ export const MOCK_WET_WEATHER: StrategyComparison = {
   ],
 };
 
+/**
+ * The Monaco overtaking-difficulty fact used to be hand-written placeholder
+ * text here (unsourced, tagged 'confirmed' on trust alone — exactly the
+ * kind of thing this module is supposed to avoid). Data shipped a real,
+ * sourced `overtakingDifficulty` field in data/track-lap-reference.json
+ * (2026-07-10), so this now comes from the same real join every live call
+ * uses (`buildTrackReferenceFacts`) instead of being duplicated by hand.
+ */
 export const MOCK_REFERENCE_FACTS: ReferenceFact[] = [
-  {
-    topic: 'monaco_overtaking',
-    fact: 'Monaco is historically very difficult to overtake on, making track position after the pit stop unusually valuable.',
-    confidence: 'confirmed',
-    source: 'data teammate — track reference file (pending)',
-  },
+  ...buildTrackReferenceFacts('monaco').filter((f) => f.topic === 'monaco_overtaking_difficulty'),
   {
     topic: 'safety_car_model',
     fact: "Monaco's high safety-car probability figure is currently a default placeholder, not derived from historical per-track data yet.",

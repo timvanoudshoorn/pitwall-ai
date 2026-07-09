@@ -7,6 +7,41 @@ Owner: `ai` teammate. Files: `src/ai/*`.
 
 ---
 
+## 2026-07-10 — Sourced overtaking-difficulty fact replaces hand-written Monaco placeholder
+
+Followed up on the "nice to have" I flagged to `data`: a sourceable
+overtaking-difficulty fact per track, to replace the hand-written (and
+honestly, improperly tagged `confirmed` despite being unsourced) Monaco
+"historically very difficult to overtake on" text that had been sitting in
+`mockFixtures.ts` since the very first version of this module. Data landed
+`data/track-lap-reference.json` (commit `dad1596`) with an
+`overtakingDifficulty` field per circuit (tier + basis string,
+`reasonable_estimate` for most tracks, `confirmed` for Monaco specifically
+since it's "near-universally cited" rather than a single citable stat).
+
+`trackReferenceFacts.ts#buildTrackReferenceFacts()` now also joins this
+file: one additional `ReferenceFact` per track (topic
+`${trackId}_overtaking_difficulty`), carrying data's real confidence tag
+through unchanged, same pattern as the pit-loss/safety-car/LiDAR facts
+already built there. Madring's `tier: "unknown"` (no races run yet) is
+explicitly skipped rather than surfaced as a fact that says nothing —
+same fail-quiet convention as a missing lookup entry.
+
+`mockFixtures.ts`'s `MOCK_REFERENCE_FACTS` no longer hand-writes the
+Monaco overtaking claim; it now splices in the real fact from
+`buildTrackReferenceFacts('monaco')` so the mock and the live path can't
+drift out of sync.
+
+Verified via smoke test (`npx tsx`, scratch file deleted after):
+`buildTrackReferenceFacts('monaco')` returns pit-loss + safety-car +
+overtaking-difficulty (3 facts, `confirmed` on the overtaking one);
+`buildTrackReferenceFacts('madring')` correctly omits an overtaking fact
+(tier `unknown`, skipped) while still returning its safety-car
+placeholder fact; `buildTrackReferenceFacts('spa')` returns all three.
+`tsc --noEmit -p tsconfig.app.json` clean for `src/ai/*`.
+
+---
+
 ## 2026-07-10 — Wet-weather / probabilistic-event grounding rule + mock fixture
 
 Picked up the "high safety-car probability and wet-weather scenarios not yet

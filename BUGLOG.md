@@ -54,3 +54,36 @@ Resuming QA after several commits since predecessor's last check, particularly:
 7. Data flows correctly through RaceParametersScreen (effective laps calculation)
 
 **Test Plan:** See QA_TEST_PLAN.md for detailed integration test cases
+
+---
+
+## Key Findings from Pre-Wiring Review
+
+**Documentation Quality:**
+- SIMLOG.md: Comprehensive, documents all 10 models + their placeholders
+- AILOG.md: Covers grounding logic and explanation prompt design
+- DATALOG.md: Reference data source tracking with confidence levels
+- All assumption flags properly tagged in code
+
+**Simulation State (Confirmed Stable):**
+- All 9 core models complete (degradation, fuel, pit-loss, undercut/overcut, strategy-compare, safety-car, weather, ERS, tiers)
+- Item 10 (lap-by-lap gap evolution for Strategy Battle) just added
+- Track abrasiveness integration (2026-07-10) working correctly
+- 2026 pace offset corrected to +2.75s (from erroneous -0.1s)
+- All per-lap calculations verified internally (per SIMLOG.md verification notes)
+
+**Data Integration:**
+- `trackAbrasivenessRating` properly threads through DegradationOptions/RaceSimInput
+- `sourceConfidence` (confirmed/reasonable_estimate/placeholder) propagates into assumptionsUsed
+- Data files valid and loadable
+
+**Visual/UI:**
+- TyreDegradationScreen already wired to real tyreStintCurve (not mock)
+- Design system correctly enforces icon+label (CompoundChip always includes letter)
+- AppShell/NavRail/TopBar properly display session state
+- MockFixtures properly validate all stints sum to race distance
+
+**Ready to Test Once StrategyComparison/AIExplanation Wired:**
+- Will verify assumptionFlags surface correctly (base_lap_time_generic, etc.)
+- Will verify grounding logic doesn't hallucinate numbers
+- Will verify stint splits sum across all car/track combos

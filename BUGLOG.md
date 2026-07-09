@@ -31,11 +31,26 @@ Resuming QA after several commits since predecessor's last check, particularly:
 
 ### Current Status
 
-**Waiting for visual teammate** to complete wiring of:
-- StrategyComparisonScreen: will call sim's real compareStrategies() via raceSimAdapter
-- AIExplanationScreen: will use real StrategyComparison and buildPrompt(), labeled as non-live placeholder for text
+**BLOCKED WAITING:** visual teammate wiring StrategyComparisonScreen and AIExplanationScreen
 
-**Ready to test** once visual commits the wiring. Will focus on:
-- assumptionFlags correctly reflecting placeholder status
-- Stint splits summing to race distance
-- No hallucinated lap numbers or stats in explanations
+**Verified Complete (pre-wiring):**
+- tsc and oxlint: clean (no errors)
+- Build: succeeds (659KB bundle)
+- Data files: valid JSON, all required fields present
+- Data adapters: correctly transform car-classes.json and tracks.json
+- Mock fixtures: all 3 StrategyComparison mocks have correct stint sums (Silverstone/Monza/Monaco)
+- Mock assumptions: properly document placeholder status
+- Grounding logic: regex correctly handles lap ranges (no false-positives on "1-35")
+- App state flow: AppSelection correctly propagates through screens
+- TyreDegradationScreen: correctly uses real data from adapters
+
+**To Test Once Visual Completes Wiring:**
+1. Strategy stint splits sum to race distance (F1 2025/Silverstone, F1 2026/Monza, F2/Monaco)
+2. assumptionsUsed flags correctly reflect base-lap-time-generic and other placeholders
+3. Grounding check flags no hallucinated numbers in explanations
+4. Undercut/overcut window-vs-full-race delta correctly explained (no conflation)
+5. Margin analysis close-call detection shows in UI
+6. Confidence ratings align with assumption flag count
+7. Data flows correctly through RaceParametersScreen (effective laps calculation)
+
+**Test Plan:** See QA_TEST_PLAN.md for detailed integration test cases

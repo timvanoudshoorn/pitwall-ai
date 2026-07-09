@@ -119,23 +119,52 @@ export const PIT_STOP = {
 };
 
 export interface PerformanceTierParams {
-  paceOffsetSec: number;
+  /**
+   * Qualifying pace offset as a FRACTION off ultimate (Top Tier) pace,
+   * not flat seconds — percent-off-ultimate scales correctly across
+   * circuits of different lap length, flat seconds doesn't (a 0.9s gap
+   * means something very different at Monaco vs Spa). Convert to seconds
+   * for a specific track via `baseLapTimeSec * paceOffsetPct` (see
+   * `performanceTier.ts` / `strategyCompare.ts`). Adopted 2026-07-09 per
+   * data teammate's data/performance-tiers.md open item #1.
+   */
+  paceOffsetPct: number;
   tyreWearMultiplier: number;
   safetyCarValueMultiplier: number;
 }
 
-/** Performance tier multipliers (PLACEHOLDER — see SIMLOG.md #4). */
+/**
+ * Performance tier definitions (PLACEHOLDER — see SIMLOG.md #9). Values
+ * are the midpoint of each band's proposed range in
+ * data/performance-tiers.md (jointly reasoned with data teammate):
+ *  - Backmarker: 1.5-2.5% off ultimate pace -> 2.0% midpoint
+ *  - Midfield:   0.7-1.5% off ultimate pace -> 1.1% midpoint
+ *  - Contender:  0.3-0.7% off ultimate pace -> 0.5% midpoint
+ *  - Top Tier:   0-0.3% off ultimate pace -> 0% (this band IS the
+ *    reference point that defines "ultimate pace", per data's reasoning)
+ */
 export const PERFORMANCE_TIERS: Record<PerformanceTierKey, PerformanceTierParams> = {
-  backmarker: { paceOffsetSec: 1.6, tyreWearMultiplier: 1.12, safetyCarValueMultiplier: 1.3 },
-  midfield: { paceOffsetSec: 0.9, tyreWearMultiplier: 1.05, safetyCarValueMultiplier: 1.1 },
-  contender: { paceOffsetSec: 0.35, tyreWearMultiplier: 1.0, safetyCarValueMultiplier: 1.0 },
-  top_tier: { paceOffsetSec: 0, tyreWearMultiplier: 0.97, safetyCarValueMultiplier: 0.9 },
+  backmarker: { paceOffsetPct: 0.02, tyreWearMultiplier: 1.12, safetyCarValueMultiplier: 1.3 },
+  midfield: { paceOffsetPct: 0.011, tyreWearMultiplier: 1.05, safetyCarValueMultiplier: 1.1 },
+  contender: { paceOffsetPct: 0.005, tyreWearMultiplier: 1.0, safetyCarValueMultiplier: 1.0 },
+  top_tier: { paceOffsetPct: 0, tyreWearMultiplier: 0.97, safetyCarValueMultiplier: 0.9 },
 };
 
 export interface CarClassParams {
   basePaceOffsetSec: number;
   tyreWearMultiplier: number;
   ersModel: 'legacy' | '2026' | 'none';
+  /**
+   * Scales PERFORMANCE_TIERS[*].paceOffsetPct for this class. Real-world
+   * FIA F2 runs a single spec chassis, so car-to-car pace variance is
+   * much smaller than F1's (driver skill dominates) — data teammate
+   * proposed a compressed tier range for F2 (~0.3-0.8% spread vs F1's
+   * ~0-2% spread) in data/performance-tiers.md. scale = desired range /
+   * F1 reference range (2.0pts) ≈ 0.5/2.0 = 0.25. Confirmed by sim as
+   * reasonable; revisit if it feels off in practice. Defaults to 1.0
+   * (no compression) for classes without a stated reason to differ.
+   */
+  tierPaceRangeScale: number;
 }
 
 /**
@@ -152,16 +181,22 @@ export interface CarClassParams {
  * class level — it's what the user's tier selection should express.
  */
 export const CAR_CLASSES: Record<CarClassKey, CarClassParams> = {
-  f1_2025: { basePaceOffsetSec: 0, tyreWearMultiplier: 1.0, ersModel: 'legacy' },
-  f1_2026_season_pack: { basePaceOffsetSec: -0.1, tyreWearMultiplier: 0.98, ersModel: '2026' },
+  f1_2025: { basePaceOffsetSec: 0, tyreWearMultiplier: 1.0, ersModel: 'legacy', tierPaceRangeScale: 1.0 },
+  f1_2026_season_pack: {
+    basePaceOffsetSec: -0.1,
+    tyreWearMultiplier: 0.98,
+    ersModel: '2026',
+    tierPaceRangeScale: 1.0,
+  },
   // Single Dallara F2 chassis assumed to run unchanged 2024-2026 per FIA (data teammate correction).
-  f2: { basePaceOffsetSec: 4.9, tyreWearMultiplier: 1.07, ersModel: 'none' },
+  // tierPaceRangeScale compressed: driver skill dominates over car variance in real-world F2.
+  f2: { basePaceOffsetSec: 4.9, tyreWearMultiplier: 1.07, ersModel: 'none', tierPaceRangeScale: 0.25 },
   // No official pace baseline exists; left at parity with f1_2025, let the tier slider carry underdog/competitive narrative.
-  apxgp: { basePaceOffsetSec: 0, tyreWearMultiplier: 1.0, ersModel: 'legacy' },
+  apxgp: { basePaceOffsetSec: 0, tyreWearMultiplier: 1.0, ersModel: 'legacy', tierPaceRangeScale: 1.0 },
   // PLACEHOLDER: agreed-default (not confirmed) — F1 World is a competitively-neutral-by-design
   // mode with fixed setups in Ranked; kept at parity with f1_2025, tier slider expected to default
   // to 'midfield' for this class (see data teammate's DATALOG.md).
-  f1_world: { basePaceOffsetSec: 0, tyreWearMultiplier: 1.0, ersModel: 'legacy' },
+  f1_world: { basePaceOffsetSec: 0, tyreWearMultiplier: 1.0, ersModel: 'legacy', tierPaceRangeScale: 1.0 },
 };
 
 /** Safety car / VSC defaults (PLACEHOLDER — see SIMLOG.md #6). */

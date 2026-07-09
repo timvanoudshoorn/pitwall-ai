@@ -26,7 +26,14 @@ import {
 export interface CarProfile {
   carClass: CarClassKey;
   performanceTier: PerformanceTierKey;
-  /** Combined laptime offset (seconds/lap) vs a Top Tier 2025-spec F1 car on the same track, same tyres/fuel. */
+  /**
+   * Tier gap as percent-off-ultimate-pace (already scaled by the car
+   * class's tierPaceRangeScale, e.g. F2's compressed range) — the
+   * track-length-independent form. Convert to seconds for a specific
+   * track via `combinedPaceOffsetSec`.
+   */
+  combinedPaceOffsetPct: number;
+  /** Combined laptime offset (seconds/lap) vs a Top Tier car of the same class on THIS track (baseLapTimeSec * combinedPaceOffsetPct + class's flat category offset). */
   combinedPaceOffsetSec: number;
   /** Combined tyre-wear multiplier applied on top of TYRE_COMPOUNDS base wear rates. */
   combinedTyreWearMultiplier: number;
@@ -45,10 +52,16 @@ const DEFAULT_TIER_BY_CLASS: Partial<Record<CarClassKey, PerformanceTierKey>> = 
   f1_world: 'midfield',
 };
 
-/** Resolves a car class + tier (or class-appropriate default tier) into the combined scaling profile. */
+/**
+ * Resolves a car class + tier (or class-appropriate default tier) into
+ * the combined scaling profile for a specific track's base laptime
+ * (needed because the tier gap is percent-off-ultimate-pace, not flat
+ * seconds — see PERFORMANCE_TIERS doc comment in constants.ts).
+ */
 export function resolveCarProfile(
   carClass: CarClassKey,
-  performanceTier?: PerformanceTierKey,
+  performanceTier: PerformanceTierKey | undefined,
+  baseLapTimeSec: number,
 ): CarProfile {
   const flags: string[] = [];
   const tier = performanceTier ?? DEFAULT_TIER_BY_CLASS[carClass] ?? 'midfield';
@@ -65,10 +78,13 @@ export function resolveCarProfile(
     'performance_tier_wear_multiplier_placeholder',
   );
 
+  const combinedPaceOffsetPct = round3(tierParams.paceOffsetPct * classParams.tierPaceRangeScale);
+
   return {
     carClass,
     performanceTier: tier,
-    combinedPaceOffsetSec: round3(classParams.basePaceOffsetSec + tierParams.paceOffsetSec),
+    combinedPaceOffsetPct,
+    combinedPaceOffsetSec: round3(classParams.basePaceOffsetSec + baseLapTimeSec * combinedPaceOffsetPct),
     combinedTyreWearMultiplier: round3(classParams.tyreWearMultiplier * tierParams.tyreWearMultiplier),
     safetyCarValueMultiplier: tierParams.safetyCarValueMultiplier,
     assumptionFlags: dedupe(flags),

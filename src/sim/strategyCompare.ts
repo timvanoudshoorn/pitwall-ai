@@ -74,8 +74,12 @@ export function compareStrategies(input: RaceSimInput): StrategyComparison {
     carClass: input.carClass,
     performanceTier: input.performanceTier,
   };
-  const tierOffset = PERFORMANCE_TIERS[input.performanceTier].paceOffsetSec;
-  const classOffset = CAR_CLASSES[input.carClass].basePaceOffsetSec;
+  const classParams = CAR_CLASSES[input.carClass];
+  const tierParams = PERFORMANCE_TIERS[input.performanceTier];
+  // Tier gap is percent-off-ultimate-pace (scales with track length), converted to seconds for
+  // THIS track's baseLapTimeSec; class gap (e.g. F2 vs F1) stays flat seconds. See SIMLOG.md #9.
+  const tierOffset = baseLapTimeSec * tierParams.paceOffsetPct * classParams.tierPaceRangeScale;
+  const classOffset = classParams.basePaceOffsetSec;
 
   const evaluated = input.strategies.map((plan) =>
     evaluateStrategy(plan, {

@@ -286,31 +286,45 @@ whatever team car they're recruited into, so they inherit that team's
 class+tier rather than having their own).
 
 **Placeholders:**
-- `PERFORMANCE_TIERS` pace offsets (Backmarker +1.6s, Midfield +0.9s,
-  Contender +0.35s, Top Tier 0s/lap vs Top Tier baseline) and tyre-wear
-  multipliers (1.12/1.05/1.0/0.97) — invented, qualitatively reasonable
+- `PERFORMANCE_TIERS` pace offsets are now **percent-off-ultimate-pace**
+  (revised 2026-07-09 per data teammate's `data/performance-tiers.md`
+  open item #1 — percentage scales correctly across circuits of
+  different lap length, flat seconds doesn't): Backmarker 2.0%,
+  Midfield 1.1%, Contender 0.5%, Top Tier 0% — each the midpoint of the
+  range data proposed. Converted to seconds for a specific track via
+  `baseLapTimeSec * paceOffsetPct * carClass.tierPaceRangeScale`
+  (`strategyCompare.ts`/`performanceTier.ts`). Tyre-wear multipliers
+  (1.12/1.05/1.0/0.97) unchanged — invented, qualitatively reasonable
   (worse car = more sliding = modestly worse tyre life despite lower
-  pace), not calibrated against data teammate's `performance-tiers.md`
-  draft yet. **TODO:** data teammate proposed percentage-based (not flat
-  seconds) tier bands in their draft so the gap scales with circuit
-  length — reconcile before treating these numbers as final; flat seconds
-  is what's implemented today.
+  pace), not calibrated against real data.
+- `CAR_CLASSES[*].tierPaceRangeScale`: F2 compressed to 0.25x the F1
+  reference range (data teammate's reasoning: real-world FIA F2 runs a
+  single spec chassis, so driver skill dominates over car-to-car pace
+  variance — a Backmarker-to-Top-Tier F2 spread should be much narrower
+  than F1's). All other classes at 1.0x (no compression) pending
+  class-specific reasoning.
 - `safetyCarValueMultiplier` per tier (1.3/1.1/1.0/0.9) — invented,
   directionally matches the plan's explicit ask (track position matters
   more for a Backmarker), not measured.
 - `CAR_CLASSES` category pace offsets: F1 2025/2026/APXGP/F1 World at
   parity (0s, class-level), F2 at +4.9s (average of data teammate's two
   now-collapsed F2 estimates). `f2.tyreWearMultiplier = 1.07` similarly
-  averaged.
+  averaged. These stay flat seconds (not percentage) — a genuine category
+  gap between formulae, not yet converted to percentage form; revisit if
+  it turns out to also need track-length scaling.
 - F1 World defaults to `midfield` tier when the caller doesn't specify one
   (`DEFAULT_TIER_BY_CLASS` in `performanceTier.ts`) — data teammate's
   agreed-default (not confirmed, no EA-published number exists), since F1
   World has no team identity to infer competitiveness from.
+- Konnersport and APXGP are explicitly NOT hardcoded to a fixed tier per
+  data's reasoning (narrative teams without a fixed competitive record) —
+  the tier slider is the mechanism for a user/career-state to express
+  "where is this team right now," not a class-level default.
 
-**Open item:** reconcile the flat-seconds tier model here against data
-teammate's percentage-based draft in `performance-tiers.md` — flagged to
-them directly, tracked as the top open item once the priority backlog is
-otherwise clear.
+**Resolved:** the flat-seconds-vs-percentage question (open item #1 in
+data's draft) is resolved as above. Still open from their draft: whether
+"Top Tier chews tyres faster on high-deg tracks" (a real-F1 nuance) is
+worth modeling — deferred as a v2 refinement, not core to the backlog.
 
 ---
 
@@ -324,4 +338,10 @@ otherwise clear.
   remodeled as battery-SoC resource instead of discrete uses). Added
   `sourceConfidence` propagation into `assumptionFlags` for
   data-teammate-sourced values, per `ai` teammate's request during data
-  shape reconciliation.
+  shape reconciliation. `bugs` verified all 5 published reference cases
+  exact/within rounding tolerance, no issues found.
+- **2026-07-09 (later same day):** Reconciled `performance-tiers.md`
+  open item #1 with data teammate — switched `PERFORMANCE_TIERS` from
+  flat seconds/lap to percent-off-ultimate-pace, added
+  `CAR_CLASSES[*].tierPaceRangeScale` for F2's compressed range. See
+  item 9 above for the resulting formula.

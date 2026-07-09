@@ -37,9 +37,20 @@ function collectNumbers(value: unknown, out: Set<number>): void {
   }
 }
 
+/**
+ * Matches a numeric literal, treating a leading "-" as a minus sign only
+ * when it is NOT immediately preceded by a digit. Without the negative
+ * lookbehind, a lap range like "laps 1-35" tokenizes as "1" and "-35"
+ * instead of "1" and "35" — the hyphen there is a range separator, not a
+ * minus sign. Caught via integration testing against real sim output
+ * (see AILOG.md) where "laps 1-35" produced a false-positive grounding
+ * warning on "-35" even though 35 was a perfectly grounded number.
+ */
+const NUMBER_TOKEN_RE = /(?<!\d)-?\d+(\.\d+)?/g;
+
 /** Pull numeric literals out of free-text reference-fact strings (e.g. "2026 pack adds +15% ERS deployment"). */
 function collectNumbersFromText(text: string, out: Set<number>): void {
-  const matches = text.match(/-?\d+(\.\d+)?/g);
+  const matches = text.match(NUMBER_TOKEN_RE);
   if (!matches) return;
   for (const m of matches) {
     const n = Number.parseFloat(m);
@@ -81,7 +92,7 @@ const IGNORE_NUMBERS = new Set([0, 1, 2, 3, 100]);
 
 export function checkGrounding(text: string, allowed: Set<number>): GroundingWarning[] {
   const warnings: GroundingWarning[] = [];
-  const tokenRe = /-?\d+(\.\d+)?/g;
+  const tokenRe = new RegExp(NUMBER_TOKEN_RE);
   let match: RegExpExecArray | null;
   while ((match = tokenRe.exec(text)) !== null) {
     const raw = match[0];

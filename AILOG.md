@@ -195,6 +195,53 @@ to anything under `data/`, per role boundaries. Full-project `tsc
 `src/sim/weather.ts` (not my files, not touched) but nothing in
 `src/ai/*`; `oxlint src/ai` clean.
 
+## 2026-07-09 — Sim shape confirmed; first real integration test found + fixed a grounding bug
+
+Sim confirmed `src/sim/strategyCompare.ts#compareStrategies()` produces
+`StrategyComparison` exactly as specified in `types.ts` — no changes
+needed on either side. Confirmed: seconds as floats (rounded to 3
+decimals), 1-indexed inclusive lap ranges, every number I might cite is
+an explicit field (never derive one myself), and per-value placeholder
+provenance is via `assumptionsUsed` string flags rather than a per-field
+confidence tag (their reasoning: avoids shape bloat). Each candidate also
+carries a coarse `confidence: 'high'|'medium'|'low'` derived from how
+many placeholder flags fed that specific candidate.
+
+Ran a real integration smoke test (`compareStrategies()` → `buildRecommendationPrompt()`
+→ `checkGrounding()`, scratch file deleted after) using an actual
+Monaco 1-stop-vs-1-stop-late case. This caught a genuine bug in my own
+grounding check, not a hypothetical: the numeric-token regex in
+`grounding.ts` tokenized a lap range like `"laps 1-35"` as `1` and
+`-35` (reading the range hyphen as a minus sign), producing a
+false-positive grounding warning on `-35` even though `35` was a
+perfectly grounded number straight from sim's `endLap` field. Fixed by
+adding a negative lookbehind (`(?<!\d)-?\d+(\.\d+)?`) so a `-` is only
+treated as a sign when it isn't immediately preceded by a digit.
+Re-verified: the real prompt now produces zero grounding warnings, a
+synthetic fabricated number (99.9) is still caught, and a genuine
+negative number in prose ("-5.2s") is still correctly parsed as negative
+(the lookbehind only changes the range-hyphen case). This is exactly the
+kind of thing bugs flagged wanting watched — worth noting that the bug
+was in my own hallucination-detection code, not in an actual model
+output, but it would have produced a spurious warning against a
+perfectly grounded real explanation, which is its own kind of failure
+(crying wolf erodes trust in the check). Caught by testing against real
+sim output rather than only hand-built mocks — the mock fixtures'
+`formatCandidate()` output happened not to trigger it in earlier manual
+review.
+
+Also noted: sim flagged that `RaceContext.carClass` is typed as plain
+`string`, so data's car-class cleanup (F2 collapsed to one `f2` key,
+`icons` removed as a class) doesn't break anything on my end — no action
+needed, just don't write copy assuming `f2_2024`/`icons` exist as
+classes.
+
+sim's `assumptionsUsed` output for the Monaco test case included flags
+like `base_lap_time_generic_placeholder` and `tyre_compound_params_placeholder`
+— confirms the placeholder-caveat instruction in `GROUNDING_RULES` has
+real content to act on, not just the mock's hand-picked assumption
+strings.
+
 ### Open items / not yet done
 
 - **Data shape not yet confirmed by sim.** Messaged sim twice (once to a

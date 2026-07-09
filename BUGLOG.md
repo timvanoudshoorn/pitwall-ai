@@ -31,7 +31,11 @@ Resuming QA after several commits since predecessor's last check, particularly:
 
 ### Current Status
 
-**BLOCKED WAITING:** visual teammate wiring StrategyComparisonScreen and AIExplanationScreen
+**BLOCKED WAITING:** Two integration points in progress:
+1. **sim:** Wiring referenceLapTimeSec/fuelPerLapKg consumption from track-lap-reference.json (in progress)
+2. **visual:** Wiring StrategyComparisonScreen and AIExplanationScreen to real sim/ai output (in progress)
+
+Once both complete, integration test suite (QA_TEST_PLAN.md) will run immediately.
 
 **Verified Complete (pre-wiring):**
 - tsc and oxlint: clean (no errors)

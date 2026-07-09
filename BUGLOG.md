@@ -31,11 +31,25 @@ Resuming QA after several commits since predecessor's last check, particularly:
 
 ### Current Status
 
-**BLOCKED WAITING:** Two integration points in progress:
-1. **sim:** Wiring referenceLapTimeSec/fuelPerLapKg consumption from track-lap-reference.json (in progress)
-2. **visual:** Wiring StrategyComparisonScreen and AIExplanationScreen to real sim/ai output (in progress)
+**SIM WIRING VERIFIED (commit ccdd70d):** ✓ COMPLETE
+- baseLapTimeSec consumed from track-lap-reference.json referenceLapTimeSec
+- baseLapTimeSourceConfidence flows into assumptionsUsed:
+  - Confirmed (Bahrain, Monaco) → no flag added
+  - Reasonable_estimate (other 21 circuits) → `base_lap_time_source_confidence_reasonable_estimate`
+  - Undefined → old `base_lap_time_generic_placeholder` flag
+- trackFuelPerLapKg converted to startFuelKg = trackFuelPerLapKg * totalLaps + reserveFuelKg
+- fuelPerLapKg sourceConfidence flows into assumptionsUsed (formula-derived = reasonable_estimate)
+- fullThrottlePct-scaled activeAeroBenefit() in ERS model (replaces flat 0.25s estimate)
 
-Once both complete, integration test suite (QA_TEST_PLAN.md) will run immediately.
+**AI WIRING VERIFIED (commit 342a4f9):** ✓ COMPLETE
+- overtakingDifficulty ReferenceFacts from track-lap-reference.json integrated
+- Madring's "unknown" tier properly skipped (no race run yet)
+- All confidence levels properly tagged on generated facts
+
+**BLOCKED WAITING:**
+- **visual:** Wiring StrategyComparisonScreen and AIExplanationScreen to real sim/ai output (in progress)
+
+Once visual completes, full integration testing suite (QA_TEST_PLAN.md) will run.
 
 **Verified Complete (pre-wiring):**
 - tsc and oxlint: clean (no errors)

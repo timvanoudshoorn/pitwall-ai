@@ -88,3 +88,5 @@ Re-read plan doc + this log, checked `git log` for what landed since last entry 
 - Confirmed our JSON shape needed no adjustment. `overtakingDifficulty` stays `ai`-only (ReferenceFact grounding), not consumed by sim — noted for anyone expecting a sim reply on that field specifically.
 
 **Next up:** pinging `visual` (drop the 90s-fallback flag now that sim's wiring is live) and `bugs` (integration test window is open — sim + ai are both wired, visual's screen wiring is the remaining piece to watch for).
+
+**`bugs` independently verified both** (sim ccdd70d + ai 342a4f9): confidence flags distinguish confirmed vs reasonable_estimate correctly, trackFuelPerLapKg->startFuelKg derivation working, Madring's "unknown" overtaking tier correctly skipped, `tsc` clean. No issues found. Full `QA_TEST_PLAN.md` run is queued behind visual's screen wiring landing — nothing further needed from data until then.

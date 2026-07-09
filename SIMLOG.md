@@ -51,11 +51,22 @@ laptime.
 - Cold-tyre warmup penalty (~0.6s on lap 1, PLACEHOLDER, decaying linearly
   to 0 over `warmupLaps`) — reasonable but unsourced.
 
-**Known limitation:** no track-specific abrasiveness/surface-temperature
-modifier yet (e.g. Bahrain vs Monaco wear very differently in reality).
-Track reference data would plug in as an additional multiplier alongside
-`carClass`/`performanceTier` — flagged as a good next refinement once data
-teammate has per-track abrasiveness notes.
+**Resolved 2026-07-10:** track-specific abrasiveness is now wired in.
+Data teammate supplied `data/track-tyre-characteristics.json` — a 1
+(gentle, e.g. Monaco/Monza) to 5 (punishing, e.g. Silverstone/Lusail)
+rating per circuit, synthesized from Pirelli's public rating methodology
+applied to well-documented circuit reputations (their own confidence
+label: `reasonable_estimate` for nearly every track, no official
+per-season numeric table exists publicly). `degradation.ts` exposes
+`trackAbrasivenessMultiplier(rating)` — a linear placeholder mapping
+(rating 3 = neutral 1.0, each step = ±10% wear rate, PLACEHOLDER not
+calibrated to real degradation data) — and `DegradationOptions.trackAbrasivenessRating`
+threads it through `tyreLapTimeDelta`/`estimateTyreLife`/`strategyCompare.ts`'s
+`RaceSimInput.trackAbrasivenessRating`. Caller is responsible for reading
+the rating out of data's JSON and passing it in (sim doesn't duplicate
+their reference file). Verified: medium tyre, lap 10, otherwise-identical
+inputs — Monaco (rating 1) shows lapTimeDeltaSec -0.054s vs Silverstone
+(rating 5) +0.144s, same base wear scaled by the multiplier.
 
 ---
 
@@ -255,10 +266,16 @@ by real research):**
   track-straight-proportion-aware once data teammate has per-track
   straight-line percentage data (explicitly noted as a next step in the
   function's own doc comment).
-- No confirmed in-game 2025-vs-2026 laptime delta exists yet (data
-  teammate flagged this as open) — `f1_2026_season_pack.basePaceOffsetSec
-  = -0.1s` in `constants.ts` is a small illustrative placeholder, not a
-  researched figure.
+- **Updated 2026-07-10:** No confirmed in-game 2025-vs-2026 laptime delta
+  exists yet, but data teammate supplied a real-world sourced range:
+  FIA/Tombazis predicted 2026 cars ~1.0-2.5s/lap slower than 2025
+  pre-season; actual 2026 Melbourne results came in slower still (~2.1-3.4s
+  off 2025 times). `f1_2026_season_pack.basePaceOffsetSec` corrected from
+  an erroneous `-0.1s` (implying 2026 cars are FASTER, which was wrong) to
+  `+2.75s` (midpoint of data's recommended 2-3.5s range). Still explicitly
+  NOT confirmed in-game F1 25 telemetry — how EA's in-game modeling maps
+  to the real 2026 regulation transition remains an open question data
+  flagged, so this stays in `assumptionFlags` as `car_class_pace_offset_placeholder`.
 
 ---
 
@@ -345,3 +362,9 @@ worth modeling — deferred as a v2 refinement, not core to the backlog.
   flat seconds/lap to percent-off-ultimate-pace, added
   `CAR_CLASSES[*].tierPaceRangeScale` for F2's compressed range. See
   item 9 above for the resulting formula.
+- **2026-07-10:** Wired in data teammate's `data/track-tyre-characteristics.json`
+  (per-circuit 1-5 abrasiveness rating) as a new `trackAbrasivenessMultiplier()`
+  in `degradation.ts`, threaded through `DegradationOptions`/`RaceSimInput`.
+  Corrected `f1_2026_season_pack.basePaceOffsetSec` from an erroneous
+  -0.1s (2026 faster) to +2.75s (2026 slower, per real-world 2026 season
+  results data supplied) — see item 1 and item 8 sections above.

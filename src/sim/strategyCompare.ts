@@ -58,6 +58,12 @@ export interface RaceSimInput {
    * from the data teammate's track reference file.
    */
   baseLapTimeSec?: number;
+  /**
+   * Per-circuit tyre stress rating (1 gentle - 5 punishing), from data
+   * teammate's data/track-tyre-characteristics.json. Omit to leave wear
+   * track-agnostic. See degradation.ts's trackAbrasivenessMultiplier().
+   */
+  trackAbrasivenessRating?: 1 | 2 | 3 | 4 | 5;
   fuelOptions?: FuelOptions;
   strategies: StrategyPlan[];
 }
@@ -73,6 +79,7 @@ export function compareStrategies(input: RaceSimInput): StrategyComparison {
   const degOptions: DegradationOptions = {
     carClass: input.carClass,
     performanceTier: input.performanceTier,
+    trackAbrasivenessRating: input.trackAbrasivenessRating,
   };
   const classParams = CAR_CLASSES[input.carClass];
   const tierParams = PERFORMANCE_TIERS[input.performanceTier];

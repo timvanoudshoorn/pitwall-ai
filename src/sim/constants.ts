@@ -183,7 +183,14 @@ export interface CarClassParams {
 export const CAR_CLASSES: Record<CarClassKey, CarClassParams> = {
   f1_2025: { basePaceOffsetSec: 0, tyreWearMultiplier: 1.0, ersModel: 'legacy', tierPaceRangeScale: 1.0 },
   f1_2026_season_pack: {
-    basePaceOffsetSec: -0.1,
+    // CORRECTION (2026-07-09, per data teammate's car-classes.json openQuestions): 2026-spec cars
+    // are SLOWER than 2025, not faster — real-world 2026 regs (new chassis/aero/power-unit rules)
+    // were predicted ~1.0-2.5s/lap slower pre-season (Tombazis/FIA), and actual 2026 Melbourne
+    // results came in slower still (~2.1-3.4s off 2025 times). Using 2.75s (midpoint of data's
+    // recommended 2-3.5s range) as the placeholder. Sourced to real-world 2026 F1 season results,
+    // NOT confirmed in-game F1 25 telemetry — how EA's in-game modeling maps to the real transition
+    // is still an open question flagged by data teammate.
+    basePaceOffsetSec: 2.75,
     tyreWearMultiplier: 0.98,
     ersModel: '2026',
     tierPaceRangeScale: 1.0,

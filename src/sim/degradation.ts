@@ -37,6 +37,24 @@ export interface DegradationOptions {
   carClass?: CarClassKey;
   performanceTier?: PerformanceTierKey;
   compoundOverride?: Partial<TyreCompoundParams>;
+  /**
+   * Per-circuit tyre stress rating, 1 (gentle, e.g. Monaco/Monza) to 5
+   * (punishing, e.g. Silverstone/Lusail) — from the data teammate's
+   * data/track-tyre-characteristics.json. Converted to a wear multiplier
+   * via `trackAbrasivenessMultiplier()` below. Omit to leave wear
+   * track-agnostic (previous behavior). See SIMLOG.md #1 follow-up.
+   */
+  trackAbrasivenessRating?: 1 | 2 | 3 | 4 | 5;
+}
+
+/**
+ * Converts a 1-5 abrasiveness rating into a wear-rate multiplier, rating
+ * 3 (moderate) as the neutral 1.0 baseline. PLACEHOLDER linear mapping —
+ * not calibrated against real degradation data, just a reasonable
+ * monotonic scale (each rating step = +/-10% wear rate). See SIMLOG.md #1.
+ */
+export function trackAbrasivenessMultiplier(rating: 1 | 2 | 3 | 4 | 5): number {
+  return round3(1 + (rating - 3) * 0.1);
 }
 
 export interface LapTimeDeltaResult {
@@ -87,6 +105,7 @@ export function tyreLapTimeDelta(
 
   let tierMultiplier = 1;
   let classMultiplier = 1;
+  let trackMultiplier = 1;
   if (options.performanceTier) {
     const tier = PERFORMANCE_TIERS[options.performanceTier];
     if (!tier) throw new Error(`Unknown performance tier: ${options.performanceTier}`);
@@ -99,9 +118,15 @@ export function tyreLapTimeDelta(
     classMultiplier = carClass.tyreWearMultiplier;
     flags.push('car_class_wear_multiplier_placeholder');
   }
+  if (options.trackAbrasivenessRating) {
+    trackMultiplier = trackAbrasivenessMultiplier(options.trackAbrasivenessRating);
+    flags.push('track_abrasiveness_multiplier_placeholder');
+  }
 
   const lapTimeDeltaSec =
-    params.paceOffsetVsHard + warmupPenalty + wear * tierMultiplier * classMultiplier;
+    params.paceOffsetVsHard +
+    warmupPenalty +
+    wear * tierMultiplier * classMultiplier * trackMultiplier;
 
   return {
     lapTimeDeltaSec: round3(lapTimeDeltaSec),
@@ -155,6 +180,10 @@ export function estimateTyreLife(
   if (options.carClass) {
     combinedMultiplier *= CAR_CLASSES[options.carClass].tyreWearMultiplier;
     flags.push('car_class_wear_multiplier_placeholder');
+  }
+  if (options.trackAbrasivenessRating) {
+    combinedMultiplier *= trackAbrasivenessMultiplier(options.trackAbrasivenessRating);
+    flags.push('track_abrasiveness_multiplier_placeholder');
   }
 
   const nominalLifeLaps = Math.round(base.nominalLife / combinedMultiplier);

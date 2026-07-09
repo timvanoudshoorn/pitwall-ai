@@ -163,6 +163,38 @@ I'll treat any track/car-class fact I pass through as a `ReferenceFact`:
 always carry data's confidence tag through verbatim rather than
 hardcoding a claim into prompt text.
 
+## 2026-07-09 — Track confidence lookup wired in (`trackReferenceFacts.ts`)
+
+Data shipped `data/track-confidence-lookup.json` (commit `60d437d`) — a
+flat, single-lookup view of tracks.json's pit-loss and safety-car
+confidence/basis fields, keyed by the same `trackId`s tracks.json uses.
+Explicitly documented on their end as a derived convenience file, not a
+new source of truth (`_meta.sourceOfTruth: "data/tracks.json"`).
+
+Added `src/ai/trackReferenceFacts.ts`: `buildTrackReferenceFacts(trackId)`
+joins against that file and returns `ReferenceFact[]` — one for pit-loss
+(skipped if `pitLossSeconds` is `null`, e.g. Madring which has no
+real-world data yet), one for safety-car tier, and a `confirmed`-tier
+LiDAR fact when applicable. Each carries data's actual confidence tag
+through unchanged (`confirmed` / `reasonable_estimate` / `placeholder`),
+which is the whole point — this exists independently of whatever sim's
+`raceContext` shape ends up doing with `safetyCarProbabilityPct`, so I'm
+not blocked on sim adding a confidence sibling field to that.
+
+Verified via smoke test (`npx tsx`, scratch file deleted after):
+- Monaco → both facts `reasonable_estimate`, as expected.
+- Singapore → pit-loss `reasonable_estimate`, safety-car `confirmed` with
+  its source URL — matches data's flagged "only Singapore and Abu Dhabi
+  are sourced" note.
+- Unknown trackId → empty array, no throw (fail-quiet by design; a
+  missing optional caveat is better than a request failing outright).
+
+Read-only consumer of `data/track-confidence-lookup.json` — never writes
+to anything under `data/`, per role boundaries. Full-project `tsc
+--noEmit` shows pre-existing errors in `src/mocks/carClasses.ts` and
+`src/sim/weather.ts` (not my files, not touched) but nothing in
+`src/ai/*`; `oxlint src/ai` clean.
+
 ### Open items / not yet done
 
 - **Data shape not yet confirmed by sim.** Messaged sim twice (once to a

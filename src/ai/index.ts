@@ -29,3 +29,4 @@ export {
   generateRecommendationExplanation,
   generateWhyNotAlternativeExplanation,
 } from './explain.ts';
+export { buildTrackReferenceFacts } from './trackReferenceFacts.ts';

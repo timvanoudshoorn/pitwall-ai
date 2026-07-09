@@ -60,20 +60,27 @@ function collectNumbersFromText(text: string, out: Set<number>): void {
 
 /**
  * Build the set of numbers the explanation is allowed to cite: every
- * numeric value that appears anywhere in the sim comparison object, plus
- * any numbers embedded in supplied reference facts. Deliberately does
- * NOT include derived values (sums, averages) — if the model needs a
- * computed total, that computation should happen in sim's output, not
- * be trusted from the model's own arithmetic.
+ * numeric value that appears anywhere in the sim comparison object, any
+ * numbers embedded in supplied reference facts, and any numbers in
+ * `extraGroundedObjects` (e.g. an undercutOvercutDelta() result cited in
+ * the prompt but not part of the StrategyComparison object itself — see
+ * BuiltPrompt.groundedExtras in promptBuilder.ts). Deliberately does NOT
+ * include derived values computed on the fly from these (sums, averages)
+ * — if the model needs a computed total, that computation should happen
+ * in sim's output, not be trusted from the model's own arithmetic.
  */
 export function buildAllowedNumbers(
   comparison: StrategyComparison,
   referenceFacts: ReferenceFact[] = [],
+  extraGroundedObjects: unknown[] = [],
 ): Set<number> {
   const nums = new Set<number>();
   collectNumbers(comparison, nums);
   for (const f of referenceFacts) {
     collectNumbersFromText(f.fact, nums);
+  }
+  for (const obj of extraGroundedObjects) {
+    collectNumbers(obj, nums);
   }
   return nums;
 }

@@ -22,7 +22,7 @@ export async function generateExplanation(
   const prompt = buildPrompt(mode, comparison, compareStrategyIds, referenceFacts);
   const result = await callClaudeForExplanation(client, prompt, options);
 
-  const allowedNumbers = buildAllowedNumbers(comparison, referenceFacts);
+  const allowedNumbers = buildAllowedNumbers(comparison, referenceFacts, prompt.groundedExtras ?? []);
   const groundingWarnings = checkGrounding(result.text, allowedNumbers);
 
   if (groundingWarnings.length > 0) {

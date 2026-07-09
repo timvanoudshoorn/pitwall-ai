@@ -7,6 +7,75 @@ Owner: `ai` teammate. Files: `src/ai/*`.
 
 ---
 
+## 2026-07-10 — Undercut/overcut mechanism wired into why-not-alternative mode
+
+Followed up on the undercut/overcut question from the sim reconciliation
+thread now that I had a concrete case to test against (why-not-alternative
+comparing two same-shape 1-stop strategies that differ only in pit-lap
+timing — exactly the `MOCK_CLOSE_CALL`-style scenario). Went with the
+approach I told sim I preferred: call `undercutOvercutDelta()` directly
+rather than asking `StrategyComparison` to grow a new field, since the
+value is a property of a *pair* of candidates being compared, not of one
+strategy.
+
+**What was built:**
+- `src/ai/mechanismFacts.ts` — `deriveUndercutOvercutMechanism(comparison,
+  idA, idB)` detects whether two candidates are "the same plan, different
+  pit-lap timing" (same stop count, same compound sequence, exactly one
+  divergent pit lap) and if so, derives the exact inputs
+  (`earlyStopLap`/`lateStopLap`/compounds/`lapsOnTyreAtWindowStart`/pit-loss
+  figures) from the candidates' own `stints`/`pitStops` fields and calls
+  sim's `undercutOvercutDelta()` directly. Returns `null` — no forced
+  framing, no crash — when the two candidates aren't directly comparable
+  this way (different stop counts or compound choices). Verified both
+  paths with an integration smoke test: a real same-shape Monaco case
+  correctly derives the mechanism, and a real different-shape Monza case
+  (1-stop vs 2-stop, different compounds) correctly returns `null`.
+- `promptBuilder.ts` — `buildWhyNotAlternativePrompt` now includes an
+  `UNDERCUT/OVERCUT MECHANISM` fact block when applicable, with an
+  explicit instruction to use its verdict/numbers directly rather than
+  reasoning about pit timing qualitatively.
+- `BuiltPrompt` gained an optional `groundedExtras` field so the
+  mechanism result's numbers (which don't live inside the
+  `StrategyComparison` object) still get added to the grounding
+  checker's allow-list — `grounding.ts#buildAllowedNumbers` takes a third
+  `extraGroundedObjects` param for this. Without it, the checker would
+  have flagged every number in the mechanism block as "ungrounded" even
+  though they're real sim output — an oversight that would have made the
+  new feature actively worse than not having it (spurious warnings on a
+  correct explanation), caught by re-running the grounding self-check as
+  part of testing rather than assuming the plumbing was right.
+
+**Hallucination risk found and addressed before it could reach a real
+generation:** in testing, the window-isolated `netDeltaSec` from the
+mechanism (20.625s, the undercut's advantage over just the 5-lap pit
+window) turned out meaningfully different from the full-race
+`deltaToBestSeconds` between the same two candidates (11.621s) — both are
+genuine, correctly-grounded numbers, but they answer different questions
+(the late pitter's fresher tyre for the remaining laps claws back most,
+not all, of the window loss). Both numbers passing the grounding check
+individually would NOT have caught a model conflating them — e.g.
+stating "so this strategy loses by 20 seconds overall," which uses a
+real number but misrepresents what it measures. That's exactly the kind
+of subtler, non-numeric-hallucination risk the grounding checker is
+explicitly documented as unable to catch (see grounding.ts's own
+caveat). Addressed it in the prompt itself rather than trying to catch
+it after the fact: `formatMechanismFact()` now includes an explicit
+IMPORTANT note that the window number is not the full-race outcome, that
+the FACTS block's "Delta to best strategy" is the full-race figure, and
+that if both are cited, they must be labeled as measuring different
+things. This is a good concrete instance of the general principle in my
+brief: a number can be 100% traceable to real sim output and the
+explanation can still be misleading — the numeric-grounding check is a
+necessary but not sufficient defense, and prompt-level disambiguation is
+still doing real work.
+
+Not yet sent to sim/bugs — will mention in the next status update rather
+than opening a new thread for something that didn't require any change
+on sim's side.
+
+---
+
 ## 2026-07-09 — Initial explanation module (core recommendation + why-not-alternative)
 
 ### What was built

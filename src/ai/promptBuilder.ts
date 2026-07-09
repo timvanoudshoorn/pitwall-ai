@@ -11,6 +11,7 @@
  * -----------------------------------------------------------------------
  */
 
+import { deriveUndercutOvercutMechanism, formatMechanismFact } from './mechanismFacts.ts';
 import type {
   ExplanationMode,
   ReferenceFact,
@@ -97,6 +98,14 @@ ${assumptionsUsed.length > 0 ? assumptionsUsed.map((a) => `- ${a}`).join('\n') :
 export interface BuiltPrompt {
   system: string;
   user: string;
+  /**
+   * Extra grounded data objects (e.g. an undercutOvercutDelta() result)
+   * that were computed to build this prompt and cited in it, but don't
+   * live inside the StrategyComparison object itself. The grounding
+   * checker needs these too so it doesn't flag their numbers as
+   * ungrounded — see explain.ts.
+   */
+  groundedExtras?: unknown[];
 }
 
 export function buildRecommendationPrompt(
@@ -136,6 +145,14 @@ export function buildWhyNotAlternativePrompt(
     strategyA.deltaToBestSeconds <= strategyB.deltaToBestSeconds ? strategyA.id : strategyB.id;
   const loserId = winnerId === strategyA.id ? strategyB.id : strategyA.id;
 
+  // If the two candidates are the same plan differing only in pit-lap
+  // timing, compute the actual undercut/overcut mechanism from sim's
+  // model instead of leaving the model to reason about pit timing
+  // qualitatively. Null when not applicable (e.g. different stop counts
+  // or compound choices) — the prompt falls back to the general framing.
+  const mechanism = deriveUndercutOvercutMechanism(comparison, idA, idB);
+  const mechanismBlock = mechanism ? `\n\n${formatMechanismFact(mechanism)}` : '';
+
   const system = `${PERSONA}\n\n${GROUNDING_RULES}`;
   const user = `
 Compare strategy "${winnerId}" against strategy "${loserId}" and explain specifically what
@@ -144,15 +161,15 @@ call — explain honestly that it's a genuine tradeoff rather than a clear mista
 only the two strategies below; don't discuss other candidates. Keep it tight: a few
 sentences on the specific mechanism (undercut/overcut timing, tyre life at the pit lap,
 compound choice under the given weather/safety-car odds) rather than a generic "strategy A
-is faster" statement.
+is faster" statement.${mechanism ? ' An UNDERCUT/OVERCUT MECHANISM block is included below — use its verdict and numbers directly rather than reasoning about pit timing qualitatively.' : ''}
 
 FACTS:
-${formatFacts(comparison, [idA, idB])}
+${formatFacts(comparison, [idA, idB])}${mechanismBlock}
 
 REFERENCE CONTEXT (background facts you may cite, each with a confidence level):
 ${formatReferenceFacts(referenceFacts)}
 `.trim();
-  return { system, user };
+  return { system, user, groundedExtras: mechanism ? [mechanism.result] : undefined };
 }
 
 export function buildPrompt(

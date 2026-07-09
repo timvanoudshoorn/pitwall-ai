@@ -28,3 +28,12 @@ Confidence key: **confirmed** (stated by official/primary source) / **reasonable
 **Coordination note:** SendMessage name resolution was broken at team spawn (all teammates spawned under the same subagent_type); coordinator supplied raw agent IDs. Received early requests from `sim` (baseline pace deltas, tier numbers, track pit-loss/SC data, 2026 ERS/Active Aero context) and an FYI from `bugs` (standing by for data to land). Responding to both now that the first pass above is committed.
 
 **Next up:** reconcile performance-tier numbers with sim directly (their message references placeholders already in `src/sim/constants.js` — need to diff against what's proposed here), then track down whatever sim/ai flag as missing once they've actually consumed these files.
+
+---
+
+## 2026-07-09 (later same session) — Flat confidence lookup for ai teammate
+
+**Added `data/track-confidence-lookup.json`**
+- `ai` teammate is building a ReferenceFact pattern (grounding claims in explanations to a traceable source) and needs to join on trackId for pit-loss/safety-car confidence without walking the full nested `tracks.json` object each time, especially for the case where sim's `raceContext` output collapses per-circuit data down to a bare `safetyCarProbabilityPct` with no confidence sibling — ai can join against this file directly instead.
+- This is explicitly a **derived convenience file, not a new source of truth** — flattens the `pitLossSeconds`/`pitLossConfidence`/`pitLossBasis`/`safetyCarTier`/`safetyCarConfidence`/`safetyCarBasis`/`lidarScanned`/`reverseLayoutAvailable` fields already in `tracks.json` into one flat `{ trackId: {...} }` map. Documented in its own `_meta` that `tracks.json` is authoritative and this file needs manual regeneration if `tracks.json` changes — worth watching for drift as a maintenance risk going forward.
+- Confidence: same as the underlying `tracks.json` values (no new claims made, pure reshaping).

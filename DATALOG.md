@@ -37,3 +37,15 @@ Confidence key: **confirmed** (stated by official/primary source) / **reasonable
 - `ai` teammate is building a ReferenceFact pattern (grounding claims in explanations to a traceable source) and needs to join on trackId for pit-loss/safety-car confidence without walking the full nested `tracks.json` object each time, especially for the case where sim's `raceContext` output collapses per-circuit data down to a bare `safetyCarProbabilityPct` with no confidence sibling — ai can join against this file directly instead.
 - This is explicitly a **derived convenience file, not a new source of truth** — flattens the `pitLossSeconds`/`pitLossConfidence`/`pitLossBasis`/`safetyCarTier`/`safetyCarConfidence`/`safetyCarBasis`/`lidarScanned`/`reverseLayoutAvailable` fields already in `tracks.json` into one flat `{ trackId: {...} }` map. Documented in its own `_meta` that `tracks.json` is authoritative and this file needs manual regeneration if `tracks.json` changes — worth watching for drift as a maintenance risk going forward.
 - Confidence: same as the underlying `tracks.json` values (no new claims made, pure reshaping).
+
+---
+
+## 2026-07-09 (later still) — Sim's next placeholder: track abrasiveness + 2026 laptime delta
+
+Sim landed the performance-tier reconciliation (commit af4a55c, SIMLOG.md item 9) and flagged their next placeholder: flat tyre-degradation multipliers in constants.ts, wanting track-specific abrasiveness data and an F1-2026-vs-2025 laptime delta. Per priority rule ("whenever sim flags an assumption or placeholder, treat that as next priority"), addressed immediately rather than queuing.
+
+**Added `data/track-tyre-characteristics.json`**
+- Per-circuit `abrasivenessRating` (1=gentle, 5=very hard on tyres) for all 24 2025-calendar circuits + Madring. No official Pirelli numeric table across all circuits for one season is publicly published in a citable form, so every rating is `reasonable_estimate`, synthesized from Pirelli's own published methodology (traction/braking/lateral/abrasion factors) applied to well-documented circuit reputations — documented per-circuit `basis` strings, same pattern as tracks.json. Las Vegas and Madring marked lower-confidence/placeholder for the same too-new-to-know reason as their safety-car entries.
+
+**Updated `data/car-classes.json`** (`f1_2026.openQuestions`)
+- Previously this field said no 2025-vs-2026 laptime delta was confirmed. Found real-world sourced data since: FIA's Nikolas Tombazis predicted 2026 cars ~1.0-2.5s/lap slower pre-season; actual 2026 Australian GP results came in slower than that (Russell's pole ~3.4s slower than Norris's 2025 Melbourne pole; Verstappen's fastest lap ~2.1s slower than 2025's). Recommended sim use ~2-3.5s/lap slower as a reasonable_estimate range if a baseline is needed now, sourced to real-world 2026 season results rather than in-game F1 25 telemetry (which still isn't directly confirmed/observed).

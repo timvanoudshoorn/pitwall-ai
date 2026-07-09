@@ -87,7 +87,8 @@
         }
       ],
       "openQuestions": [
-        "No official EA source found yet quantifying an in-game laptime delta between 2025-spec and 2026-spec cars on the same track (2026 real-world cars are expected to be slower than 2025 cars due to the downforce/drag cuts, per FIA design intent, but F1 25's in-game modeling of that has not been directly confirmed). Flagging as placeholder for sim rather than asserting a number."
+        "In-game (F1 25 2026 Season Pack specifically) laptime delta between 2025-spec and 2026-spec cars is still not directly confirmed by EA. However, real-world 2026-vs-2025 data now exists and is a reasonable placeholder basis: FIA pre-season simulation predicted 2026 cars ~1.0-2.5s slower than 2025 cars per lap (source: Nikolas Tombazis, FIA single-seater technical director, via Autosport forums thread citing FIA statements). Actual 2026 Australian GP (Melbourne) results came in slower than that prediction: George Russell's 2026 pole (1:18.518) was ~3.4s slower than Lando Norris's 2025 Melbourne pole, and Verstappen's 2026 fastest lap was ~2.1s slower than the 2025 fastest lap. Recommend sim use a reasonable_estimate range of roughly 2-3.5s slower per lap at a 'typical' circuit for 2026-spec vs 2025-spec cars if a laptime baseline is needed now, sourced to real-world 2026 season data rather than in-game telemetry, and revisit once real F1 25 2026-pack lap times are directly observable/comparable in-game.",
+        "source_for_2026_laptime_delta: https://forums.autosport.com/topic/228681-nikolas-tombazis-says-2026-cars-to-be-15s-25s-slower-than-2025-cars/ ; https://www.gpfans.com/en/f1-news/1078064/f1-cars-2026-how-much-slower-australian-grand-prix/"
       ]
     },
     {

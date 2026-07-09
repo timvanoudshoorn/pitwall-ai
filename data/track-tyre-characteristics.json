@@ -1,0 +1,39 @@
+{
+  "_meta": {
+    "purpose": "Per-circuit tyre stress/abrasiveness characteristics, for sim's degradation-curve multipliers (currently flat placeholders per sim's SIMLOG.md item 9 follow-up). Consumed alongside tracks.json and track-confidence-lookup.json.",
+    "confidenceLegend": {
+      "confirmed": "Directly stated by Pirelli/FIA/F1 as an official rating for a specific season.",
+      "reasonable_estimate": "Derived from Pirelli's own general methodology (traction/braking/lateral/track-evolution/asphalt-abrasion factors, as described in Pirelli's public 'how tyres are chosen' explainer) applied to well-known circuit characteristics, not a single official numeric table — no such table is publicly published in full, confirmed circuit-by-circuit, for a given season.",
+      "placeholder": "No basis yet."
+    },
+    "methodology": "Pirelli rates circuits informally each race weekend on traction demands, braking demands, lateral-force demands, and overall tyre stress/asphalt abrasion, then picks 3 of 5 compounds accordingly (harder compounds for high-stress circuits, softer for low-stress). No single official numeric 1-5 table across all circuits for one season is publicly published in a form we could cite directly, so the abrasivenessRating (1=gentle on tyres, 5=very hard on tyres) below is a reasonable_estimate synthesis of widely-reported circuit reputations (race-weekend Pirelli preview notes, post-season technical review commentary), not a lifted official table. Treat as a starting multiplier basis for sim, not a calibrated value.",
+    "lastGenerated": "2026-07-09"
+  },
+  "tracks": {
+    "albert_park": {"abrasivenessRating": 2, "confidence": "reasonable_estimate", "basis": "Smooth, newer asphalt (resurfaced for 2021 layout); low-medium tyre stress, mostly traction/braking-limited rather than lateral-load-limited."},
+    "shanghai": {"abrasivenessRating": 3, "confidence": "reasonable_estimate", "basis": "Long, high-energy Turn 1-2-3 complex and a long back straight into heavy braking; moderate-high combined stress."},
+    "suzuka": {"abrasivenessRating": 4, "confidence": "reasonable_estimate", "basis": "High-speed, high-lateral-load circuit (Esses, 130R, Spoon); consistently reported as one of the more physically demanding circuits on tyres."},
+    "bahrain": {"abrasivenessRating": 4, "confidence": "reasonable_estimate", "basis": "Abrasive desert asphalt surface is a widely-reported characteristic of this circuit specifically (distinct from most other stress factors, this one is about surface grain rather than load), commonly cited as one of the most tyre-punishing surfaces on the calendar."},
+    "jeddah": {"abrasivenessRating": 3, "confidence": "reasonable_estimate", "basis": "Very high average speed and sustained lateral loads through fast sweeping sections, offset by a smooth new-tarmac surface."},
+    "miami": {"abrasivenessRating": 3, "confidence": "reasonable_estimate", "basis": "Mix of high-speed sections and tight chicanes; moderate stress, newer asphalt limits abrasion."},
+    "imola": {"abrasivenessRating": 3, "confidence": "reasonable_estimate", "basis": "Old-school high-speed direction changes (Tamburello, Villeneuve) with some abrasive, bumpy surface sections."},
+    "monaco": {"abrasivenessRating": 1, "confidence": "reasonable_estimate", "basis": "Low speeds throughout, minimal lateral load; consistently the lowest-degradation circuit on the calendar (strategy is track-position-dominated, not tyre-life-dominated, here)."},
+    "barcelona": {"abrasivenessRating": 4, "confidence": "reasonable_estimate", "basis": "High-speed, long-duration lateral loading (Turns 3, 9) on an abrasive surface; historically used as a pre-season tyre-development benchmark specifically because it's demanding."},
+    "montreal": {"abrasivenessRating": 2, "confidence": "reasonable_estimate", "basis": "Stop-start, traction/braking-dominated rather than lateral-load-dominated; smooth surface, low-medium tyre stress despite being physically demanding on brakes."},
+    "red_bull_ring": {"abrasivenessRating": 2, "confidence": "reasonable_estimate", "basis": "Short lap, mostly traction-zone-dominated (uphill/downhill throttle sections); low-medium tyre stress."},
+    "silverstone": {"abrasivenessRating": 5, "confidence": "reasonable_estimate", "basis": "Sustained very-high-speed lateral loading (Maggotts-Becketts-Chapel, Copse) is consistently reported as among the single most tyre-punishing sequences in the sport; commonly cited as the most demanding circuit on the calendar for tyres."},
+    "spa": {"abrasivenessRating": 3, "confidence": "reasonable_estimate", "basis": "Long circuit with some high-load corners (Eau Rouge/Raidillon, Pouhon) balanced by long low-load straight sections; moderate overall stress."},
+    "hungaroring": {"abrasivenessRating": 3, "confidence": "reasonable_estimate", "basis": "Continuous medium-speed cornering with little rest for tyres, despite low top speeds; often described as deceptively demanding for a 'low-speed' track."},
+    "zandvoort": {"abrasivenessRating": 3, "confidence": "reasonable_estimate", "basis": "Banked corners (Turn 3, final corner) increase lateral loading beyond what the circuit's short length would suggest."},
+    "monza": {"abrasivenessRating": 1, "confidence": "reasonable_estimate", "basis": "Lowest-downforce, mostly-straight-line circuit on the calendar with heavy but brief braking zones; consistently one of the lowest-degradation circuits."},
+    "baku": {"abrasivenessRating": 2, "confidence": "reasonable_estimate", "basis": "Long straight-line running with a tight, low-speed castle section; low-medium overall stress despite being a demanding circuit for other reasons (walls, braking into Turn 1)."},
+    "singapore": {"abrasivenessRating": 4, "confidence": "reasonable_estimate", "basis": "Long race duration (longest on the calendar by time), heavy braking zones, bumpy street surface, and heat/humidity combine for high cumulative tyre stress despite modest peak lateral loads."},
+    "cota": {"abrasivenessRating": 4, "confidence": "reasonable_estimate", "basis": "Turn 1 uphill esses and a mix of high-speed direction changes create sustained lateral loading; widely reported as a demanding circuit for tyres."},
+    "mexico_city": {"abrasivenessRating": 2, "confidence": "reasonable_estimate", "basis": "High altitude (thinner air) reduces aerodynamic loads and cornering forces on tyres despite the circuit's technical stadium section; commonly reported as a lower-degradation circuit for this reason specifically."},
+    "interlagos": {"abrasivenessRating": 3, "confidence": "reasonable_estimate", "basis": "Anticlockwise direction (unusual loading pattern), undulating surface, and Senna S/Turn 4-5 loading create moderate-high stress."},
+    "las_vegas": {"abrasivenessRating": 2, "confidence": "placeholder", "basis": "Very long straights, cold night-race track temperatures typically reduce degradation; only 2-3 real races run, low confidence in the exact rating."},
+    "lusail": {"abrasivenessRating": 5, "confidence": "reasonable_estimate", "basis": "Very high-speed, high-lateral-load layout with minimal rest for tyres across a full lap; widely reported (including explicit compound-conservatism from Pirelli in past editions due to structural tyre stress concerns) as one of the most demanding circuits on the calendar."},
+    "yas_marina": {"abrasivenessRating": 2, "confidence": "reasonable_estimate", "basis": "Modern, smooth surface with a mix of low-speed and medium-speed sections; generally reported as low-medium stress."},
+    "madring": {"abrasivenessRating": null, "confidence": "placeholder", "basis": "New venue, no real-world race data yet (first race Sept 2026)."}
+  }
+}

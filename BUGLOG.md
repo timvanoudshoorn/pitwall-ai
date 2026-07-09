@@ -57,6 +57,26 @@ Resuming QA after several commits since predecessor's last check, particularly:
 
 ---
 
+## Track-Lap-Reference Data Integration (2026-07-10)
+
+**Data Validation: COMPLETE ✓**
+
+`data/track-lap-reference.json` landed (commit dad1596). Verified:
+
+✓ File structure: 25 circuits, 8 _meta fields
+✓ Confidence distribution:
+  - 2 circuits "confirmed" (Bahrain, Monaco — Wikipedia-verified)
+  - 21 circuits "reasonable_estimate" (general F1 knowledge, not re-verified)
+  - 2 circuits "placeholder" (Madring — no race run yet)
+✓ All fuelPerLapKg values match formula (0.30*lengthKm + 0.15 + (throttle%-60)/100*0.4)
+✓ Madring intentionally all placeholders (raceDistanceKm: null, referenceLapTimeSec: null)
+✓ Overtaking difficulty tiers properly distributed (very_high/high/medium/low across calendar)
+✓ Confidence levels properly documented in each field's basis string
+
+**Ready for sim integration:** Sim can now call with track-specific baseLapTimeSec, fuelPerLapKg, and will surface confidence levels in assumptionsUsed flags (e.g., `referenceLapTime_source_confidence_reasonable_estimate`).
+
+---
+
 ## Key Findings from Pre-Wiring Review
 
 **Documentation Quality:**

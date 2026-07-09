@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/*
+ * PitWall AI design tokens — instrument-panel / timing-tower aesthetic.
+ * See CLAUDE.md > Design System for the full rationale. Palette validated
+ * with the dataviz skill's validate_palette.js (categorical six-checks,
+ * dark mode, surface #0a0b0d) — do not hand-pick replacement hues without
+ * re-running it.
+ */
+@theme {
+  /* Surfaces */
+  --color-pit-bg: #0a0b0d;
+  --color-pit-panel: #14171b;
+  --color-pit-panel-raised: #1a1e23;
+  --color-pit-border: #262b32;
+  --color-pit-border-strong: #363c45;
+
+  /* Text */
+  --color-pit-text: #e7e9ec;
+  --color-pit-text-secondary: #8b929c;
+  --color-pit-text-muted: #5a6068;
+
+  /* Accent (selection / active state, timing-tower purple) */
+  --color-pit-accent: #a855f7;
+  --color-pit-accent-dim: #7c3aed;
+
+  /* Status (fixed, reserved meaning — always icon + label, never alone) */
+  --color-status-good: #22c55e;
+  --color-status-warning: #eab308;
+  --color-status-serious: #f97316;
+  --color-status-critical: #ef4444;
+
+  /* Tyre compounds (real-world F1 broadcast convention — fixed, not a
+     generic categorical ramp; validated for dark surface, always paired
+     with a letter label S/M/H/I/W in the UI, never color alone) */
+  --color-tyre-soft: #ef4444;
+  --color-tyre-medium: #b58312;
+  --color-tyre-hard: #c9c2b0;
+  --color-tyre-inter: #16a34a;
+  --color-tyre-wet: #3b82f6;
+
+  --font-display: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-pit-bg);
+  color: var(--color-pit-text);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular numerals everywhere data appears — a timing tower never lets
+   digits jitter width as they change. */
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--color-pit-accent-dim);
+  color: white;
+}
+
+/* Thin scrollbars matching the instrument-panel aesthetic */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-pit-border-strong) transparent;
+}

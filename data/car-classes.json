@@ -1,0 +1,139 @@
+{
+  "_meta": {
+    "purpose": "Reference data for all playable/AI car classes in F1 25 (base game + 2026 Season Pack DLC). Consumed by the sim engine for pace/tyre-wear baselines, not by any UI or math logic directly.",
+    "confidenceLegend": {
+      "confirmed": "Directly stated by an official EA/F1/FIA source or well-documented real-world regulation.",
+      "reasonable_estimate": "Inferred from confirmed facts plus general motorsport knowledge; not stated verbatim by a primary source.",
+      "placeholder": "No usable source found yet; needs follow-up research or a sim-side default."
+    },
+    "lastReviewed": "2026-07-09"
+  },
+  "classes": [
+    {
+      "id": "f1_2025",
+      "name": "F1 2025 Season (base game)",
+      "confidence": "confirmed",
+      "description": "The 10 real-world 2025 F1 constructors, base game content. This is the pace/tyre baseline every other class' strategy assumptions get compared against.",
+      "source": "https://www.ea.com/en/games/f1/f1-25/faq ; https://en.wikipedia.org/wiki/2025_Formula_One_World_Championship ; https://formularapida.net/en/f1-2025-team-chassis-name-drivers-numbers-officials-more/",
+      "teams": [
+        {"id": "mclaren_2025", "officialName": "McLaren Formula 1 Team", "confidence": "confirmed"},
+        {"id": "ferrari_2025", "officialName": "Scuderia Ferrari HP", "confidence": "confirmed"},
+        {"id": "red_bull_2025", "officialName": "Oracle Red Bull Racing", "confidence": "confirmed"},
+        {"id": "mercedes_2025", "officialName": "Mercedes-AMG PETRONAS Formula One Team", "confidence": "confirmed"},
+        {"id": "aston_martin_2025", "officialName": "Aston Martin Aramco Formula One Team", "confidence": "confirmed"},
+        {"id": "alpine_2025", "officialName": "BWT Alpine Formula One Team", "confidence": "confirmed"},
+        {"id": "williams_2025", "officialName": "Atlassian Williams Racing", "confidence": "confirmed"},
+        {"id": "racing_bulls_2025", "officialName": "Visa Cash App RB Formula One Team", "confidence": "confirmed", "notes": "Sponsor-naming churns mid-season historically; re-verify before each season update."},
+        {"id": "kick_sauber_2025", "officialName": "Stake F1 Team Kick Sauber", "confidence": "confirmed", "notes": "Transitions to Audi works team for 2026 — see f1_2026 class."},
+        {"id": "haas_2025", "officialName": "MoneyGram Haas F1 Team", "confidence": "confirmed"},
+        {"id": "konnersport", "officialName": "Konnersport", "confidence": "confirmed", "notes": "Fictional 11th team from Braking Point, selectable as an alternative 11th-team slot to APXGP in Driver Career/My Team. Principal Casper Akkerman, liaison Devon Butler; drivers Callie Mayer and Aiden Jackson in the Braking Point narrative. Strategy-relevant baseline: game narrative frames Konnersport as a genuine title threat to Red Bull, i.e. a Top Tier-capable car once its own career arc develops, not a fixed backmarker.", "source": "https://en.wikipedia.org/wiki/F1_25 ; https://www.ea.com/en/games/f1/f1-25/features/braking-point-3"}
+      ],
+      "strategyNotes": "Pace order is not fixed in-game (depends on user's own team/upgrades in career modes); for AI-recruited or non-player teams the game's own AI pace model governs. Treat per-team absolute pace as NOT something this app should hardcode — use the Performance Tier slider (see performance-tiers.md) instead, seeded by real-world 2025 competitive order only as flavor/default suggestion."
+    },
+    {
+      "id": "f1_2026",
+      "name": "F1® 25: 2026 Season Pack",
+      "confidence": "confirmed",
+      "description": "New-regulation 2026-spec cars, sold as paid DLC on top of F1 25. 11 real teams (Cadillac joins, Kick Sauber becomes Audi), plus My Team as a 12th slot. Same F1 25 game infrastructure, new cars/tracks/rules layered in.",
+      "source": "https://www.ea.com/games/f1/f1-25/news/f1-25-2026-season-pack-official-reveal ; https://www.ea.com/en/games/f1/f1-25/features/26-season-update-new-teams ; https://traxion.gg/how-f1-25s-2026-season-pack-replicates-the-new-regulations/",
+      "teams": [
+        {"id": "mclaren_2026", "officialName": "McLaren Formula 1 Team", "confidence": "reasonable_estimate", "notes": "Team identity confirmed present; exact 2026 title-sponsor string not individually re-verified per team."},
+        {"id": "ferrari_2026", "officialName": "Scuderia Ferrari", "confidence": "reasonable_estimate"},
+        {"id": "red_bull_2026", "officialName": "Oracle Red Bull Racing", "confidence": "confirmed", "notes": "Isack Hadjar confirmed partnering Verstappen for 2026."},
+        {"id": "mercedes_2026", "officialName": "Mercedes-AMG PETRONAS Formula One Team", "confidence": "reasonable_estimate"},
+        {"id": "aston_martin_2026", "officialName": "Aston Martin Aramco Formula One Team", "confidence": "reasonable_estimate"},
+        {"id": "alpine_2026", "officialName": "BWT Alpine Formula One Team", "confidence": "reasonable_estimate"},
+        {"id": "williams_2026", "officialName": "Atlassian Williams Racing", "confidence": "reasonable_estimate"},
+        {"id": "racing_bulls_2026", "officialName": "Racing Bulls", "confidence": "confirmed", "notes": "Arvid Lindblad joins Liam Lawson for 2026."},
+        {"id": "audi_2026", "officialName": "Audi F1 Team", "confidence": "confirmed", "notes": "Successor to Kick Sauber; Gabriel Bortoleto and Nico Hulkenberg confirmed drivers."},
+        {"id": "haas_2026", "officialName": "Haas F1 Team", "confidence": "reasonable_estimate"},
+        {"id": "cadillac_2026", "officialName": "Cadillac F1 Team", "confidence": "confirmed", "notes": "Brand-new 11th constructor, first major American manufacturer entry. Car: MAC-26 (Mario Andretti Cadillac). Ferrari customer power unit through 2028, own GM power unit from 2029. Drivers Sergio Perez (#11) and Valtteri Bottas (#77). As a first-year team with a customer engine and no F1-spec development history, its realistic strategy-relevant baseline is Backmarker-to-low-Midfield, not assumed competitive — flag for sim as a case where 'real-world debut team' should not default to Midfield.", "source": "https://www.formula1.com/en/teams/cadillac ; https://www.skysports.com/f1/news/12040/13492528/cadillac-f1-all-you-need-to-know-about-new-2026-team-drivers-team-principal-engine-super-bowl-launch"}
+      ],
+      "regulationChanges": [
+        {
+          "change": "DRS removed, replaced by Overtake Mode",
+          "confidence": "confirmed",
+          "detail": "Manual overtake-assist DRS is gone. Overtake Mode gives up to 350kW/470hp of extra electrical deployment (vs. old ~120kW/161hp Overtake in 2025-spec ERS) when within 1s of the car ahead at a Detection Line, usable until the next Activation Line, battery permitting.",
+          "strategyImplication": "Overtake availability is now battery-state-gated rather than a fixed lap-by-lap DRS zone allowance. This makes ERS/battery management a genuine strategic resource comparable to fuel or tyre life — a driver who burns battery defending can't threaten Overtake Mode on the next lap. The sim's ERS deployment model for 2026-spec cars should treat battery state-of-charge as a stateful variable across a stint, not a fixed per-lap boost.",
+          "source": "https://traxion.gg/how-f1-25s-2026-season-pack-replicates-the-new-regulations/"
+        },
+        {
+          "change": "Active Aerodynamics (Cornering Mode / Straight Line Mode)",
+          "confidence": "confirmed",
+          "detail": "Wings automatically shift between a high-downforce 'Cornering Mode' (engaged under braking/cornering/lift-off, and by default outside marked zones) and a low-drag 'Straight Line Mode' active only inside track-marked Straight Line Zones (functionally similar to where DRS zones used to be, but automatic, not driver-toggled the same way).",
+          "strategyImplication": "Because SLM is automatic and zone-locked rather than a discretionary driver choice, it doesn't add a new strategic decision point the way old DRS enabling did — but it does change straight-line top speed and drag profile per track, which affects pit-lane-loss-relative overtaking difficulty and slipstream draft value. Net effect on strategy math is likely closer to 'zone geometry changes per track' than 'a new lever the strategist controls.'",
+          "source": "https://traxion.gg/how-f1-25s-2026-season-pack-replicates-the-new-regulations/"
+        },
+        {
+          "change": "MGU-H removed, MGU-K deployment nearly tripled",
+          "confidence": "confirmed",
+          "detail": "Real-world 2026 regs: ERS is simplified (no MGU-H) but MGU-K deployment jumps from ~120kW to 350kW, roughly 50/50 split between combustion and electrical power.",
+          "strategyImplication": "Higher reliance on battery deployment for pure pace (not just Overtake Mode) means energy management across a lap/stint becomes more central to laptime than in 2025-spec cars — a car that mismanages battery state loses more raw pace than a 2025 car would for the same mistake.",
+          "source": "https://www.espn.com/racing/f1/story/_/id/48090668/2026-f1-rules-whats-new-cars-how-changes-affect-racing"
+        },
+        {
+          "change": "Narrower 18-inch tyres, less downforce, less drag, lighter/smaller cars",
+          "confidence": "confirmed",
+          "detail": "~30% less downforce, ~55% less drag, cars 20cm shorter, 10cm narrower, weight down ~30kg to 768kg minimum.",
+          "strategyImplication": "Less downforce generally means less tyre-destroying lateral load in high-speed corners but the FIA's target was closer/more raceable cars, not necessarily lower degradation — sim should not assume 2026 tyre wear is simply '2025 minus a flat percentage' without dedicated modeling once real in-game telemetry is available. Marking this as an open question for the sim teammate rather than asserting a specific wear delta.",
+          "source": "https://www.espn.com/racing/f1/story/_/id/48090668/2026-f1-rules-whats-new-cars-how-changes-affect-racing"
+        },
+        {
+          "change": "Advanced Sustainable Fuel",
+          "confidence": "confirmed",
+          "detail": "Real-world 2026 regs target 50% sustainable fuel; new fuel chemistry is a known early-season performance variance risk in the real sport.",
+          "strategyImplication": "No confirmed in-game fuel-effect modeling difference found yet for F1 25's 2026 pack specifically (game likely abstracts this into the existing fuel-load laptime model rather than simulating fuel chemistry). Treat as flavor/lore context for the AI explainer, not a distinct sim variable, unless the sim teammate finds otherwise.",
+          "source": "https://www.espn.com/racing/f1/story/_/id/48090668/2026-f1-rules-whats-new-cars-how-changes-affect-racing"
+        }
+      ],
+      "openQuestions": [
+        "No official EA source found yet quantifying an in-game laptime delta between 2025-spec and 2026-spec cars on the same track (2026 real-world cars are expected to be slower than 2025 cars due to the downforce/drag cuts, per FIA design intent, but F1 25's in-game modeling of that has not been directly confirmed). Flagging as placeholder for sim rather than asserting a number."
+      ]
+    },
+    {
+      "id": "f2",
+      "name": "Formula 2 (FIA F2 Championship)",
+      "confidence": "reasonable_estimate",
+      "description": "F1 25 includes F2 as a class; the real-world championship has run a single chassis, the Dallara F2 2024, across 2024, 2025 and 2026 with no replacement announced — so 'F2 2024 vs F2 2026 chassis' is very likely NOT a real distinction the game makes (there is only one chassis in this window). Flagging this as a likely correction to the brief's assumption rather than confirming two separate in-game F2 classes.",
+      "source": "https://en.wikipedia.org/wiki/FIA_Formula_2_Championship ; https://www.motorsportweek.com/2023/08/31/formula-2-unveils-new-chassis-for-2024-and-beyond/ ; https://feederseries.net/2026/03/04/formula-2-2026-season-guide/",
+      "chassis": [
+        {
+          "id": "f2_dallara_2024",
+          "name": "Dallara F2 2024",
+          "confidence": "confirmed",
+          "detail": "3.4L turbocharged Mecachrome engine, no power steering, in use for the 2024, 2025, and 2026 F2 seasons. Designed to visually/structurally resemble contemporary F1 cars.",
+          "strategyImplication": "Single-spec chassis means F2's tyre/pace baseline is far more homogeneous across the grid than F1 — driver/team skill dominates over car variance. The performance-tier slider matters less for F2 strategically than for the F1 classes; still useful for AI opponent difficulty scaling, but shouldn't be read as 'car development tier' the way it is for F1."
+        }
+      ],
+      "openQuestion": "Whether F1 25 / the 2026 Season Pack actually labels F2 content as a distinct '2024' vs '2026' chassis in its UI is unconfirmed — no source found describing two separate F2 car classes in-game. Sim/AI should NOT assume two distinct F2 tyre/pace profiles exist until this is confirmed from in-game UI or patch notes; treat F1 25's F2 as one class pending correction."
+    },
+    {
+      "id": "apxgp",
+      "name": "APXGP (F1 THE MOVIE tie-in, Iconic Edition)",
+      "confidence": "confirmed",
+      "description": "Fictional team from the 2025 Apple Original Films movie 'F1', playable as an 11th-team alternative to Konnersport (Iconic Edition / Iconic Edition Upgrade content). Drivers: Sonny Hayes (Brad Pitt's character) and Joshua Pearce (Damson Idris's character).",
+      "source": "https://www.ea.com/en/games/f1/f1-25/news/f1-25-f1-movie ; https://www.ea.com/news/f1-25-movie-game-crossover ; https://www.espn.com/gaming/story/_/id/45253044/ea-sports-f1-25-braking-point-f1-movie",
+      "strategyNotes": "Playable in My Team 2.0 as team owner (inheriting car + both drivers) and via six movie-inspired scenario missions (Silverstone intro free to all, then Monza/Zandvoort/Mexico/Spa/Abu Dhabi episodes as Iconic Edition content). No official pace baseline published; movie narrative frames APXGP as a struggling backmarker team on an underdog redemption arc, so Backmarker-to-Midfield is a reasonable default pending an explicit dev statement — marking as reasonable_estimate, not confirmed.",
+      "confidenceForBaseline": "reasonable_estimate"
+    },
+    {
+      "id": "icons",
+      "name": "Driver Icons / Legends",
+      "confidence": "confirmed",
+      "description": "Legendary real-world drivers recruitable into current-spec cars in Driver Career and My Team (both by the player and, new in F1 25, by AI-controlled teams).",
+      "source": "https://www.ea.com/en/games/f1/f1-25/features/career-mode ; https://traxion.gg/f1-25s-full-driver-list-revealed-includes-f3-drivers-for-the-first-time/",
+      "roster": ["Ayrton Senna", "Michael Schumacher", "Jacques Villeneuve", "Jenson Button", "Mika Hakkinen", "Felipe Massa", "Mark Webber", "David Coulthard", "Callum Voisin", "Matias Zagazeta"],
+      "strategyNotes": "Icons drive whatever current-spec car they're recruited into (their own team's real 2025/2026-spec car) — there is no separate 'Icon car class' with its own pace/tyre model. Callum Voisin and Matias Zagazeta are original fictional legends created for the game (F1 25 debut), not real historical drivers; the other eight are real. This class should be modeled purely as a driver-skill layer on top of whichever F1 2025/2026 team car they're placed in, not a distinct car-class entry in sim's pace tables.",
+      "confidenceForRosterCompleteness": "reasonable_estimate"
+    },
+    {
+      "id": "f1_world_car",
+      "name": "F1 World Car",
+      "confidence": "reasonable_estimate",
+      "description": "A generic, non-team-specific car used in F1 World mode (the game's central hub for solo/multiplayer/Ranked activity), separate from any real 2025/2026 team livery. Players customize and upgrade this car within F1 World progression; Ranked and some F1 World events lock it to fixed setups for competitive parity.",
+      "source": "https://en.wikipedia.org/wiki/F1_25 ; https://help.ea.com/en/articles/f1/f1-25/car-setups-guide/",
+      "strategyNotes": "No official baseline pace tier found published by EA. Because F1 World explicitly exists to create a setup-neutral, fair-matchmaking competitive environment (fixed setups in Ranked, License-based skill matchmaking), its car is best modeled as a fixed Midfield baseline by default — not because that's confirmed, but because a competitively-neutral generic car with progression-based upgrades logically starts below Top Tier and is designed not to feel like a Backmarker either. Sim's placeholder of Midfield for F1 World is a reasonable default; this is not yet a confirmed fact and should be revisited if EA publishes concrete stats.",
+      "confidenceForBaseline": "reasonable_estimate"
+    }
+  ]
+}

@@ -17,6 +17,7 @@
  * -----------------------------------------------------------------------
  */
 
+import type { ConfidenceLevel } from '../ai/types';
 import { CAR_CLASSES, ERS_2026_DEFAULTS, type CarClassKey } from './constants';
 
 export type ErsDeployMode = 'qualifying' | 'hotlap' | 'balanced' | 'conservation';
@@ -139,16 +140,42 @@ export interface ActiveAeroBenefitResult {
 }
 
 /**
- * Active Aero drag-reduction benefit, expressed as a flat per-lap
- * estimate. A track-length/straight-proportion-aware version should
- * replace this once the data teammate has track-specific straight-line
- * percentage data.
+ * Reference full-throttle % the original flat 0.25s/lap estimate was
+ * implicitly calibrated against — the rough calendar-wide average across
+ * data teammate's data/track-lap-reference.json `fullThrottlePct` field
+ * (values range Monaco ~40% to Monza ~82%). PLACEHOLDER, not measured.
  */
-export function activeAeroBenefit(): ActiveAeroBenefitResult {
+const REFERENCE_FULL_THROTTLE_PCT = 65;
+const FLAT_GAIN_AT_REFERENCE_SEC = 0.25;
+
+/**
+ * Active Aero drag-reduction benefit, per-lap. Track-straight-proportion-
+ * aware (resolved 2026-07-10): pass `fullThrottlePct` from data teammate's
+ * data/track-lap-reference.json to scale the estimate — more full-throttle
+ * time means more of the lap benefits from reduced drag, so the gain
+ * scales up/down linearly from the flat estimate's implicit reference
+ * point. Omit `fullThrottlePct` to fall back to the flat estimate (still a
+ * PLACEHOLDER either way — the scaling shape is a reasonable
+ * approximation, not calibrated to real Active Aero data).
+ */
+export function activeAeroBenefit(
+  fullThrottlePct?: number,
+  sourceConfidence?: ConfidenceLevel,
+): ActiveAeroBenefitResult {
+  const flags = ['active_aero_flat_gain_placeholder'];
+  let estimatedLapTimeGainSec = FLAT_GAIN_AT_REFERENCE_SEC;
+  if (fullThrottlePct !== undefined) {
+    estimatedLapTimeGainSec = round3(
+      FLAT_GAIN_AT_REFERENCE_SEC * (fullThrottlePct / REFERENCE_FULL_THROTTLE_PCT),
+    );
+    if (sourceConfidence && sourceConfidence !== 'confirmed') {
+      flags.push(`active_aero_full_throttle_source_confidence_${sourceConfidence}`);
+    }
+  }
   return {
     dragDeltaPct: ERS_2026_DEFAULTS.activeAeroDragDeltaPct,
-    estimatedLapTimeGainSec: 0.25, // PLACEHOLDER flat estimate, see SIMLOG.md #8
-    assumptionFlags: ['active_aero_flat_gain_placeholder'],
+    estimatedLapTimeGainSec,
+    assumptionFlags: flags,
   };
 }
 

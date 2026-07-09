@@ -11,13 +11,25 @@
  * -----------------------------------------------------------------------
  */
 
+import type { ConfidenceLevel } from '../ai/types';
 import { FUEL } from './constants';
 
 export interface FuelOptions {
   startFuelKg?: number;
+  /**
+   * Track-specific fuel burn (kg/lap), e.g. data teammate's
+   * data/track-lap-reference.json `fuelPerLapKg` (formula-derived from
+   * circuit length + full-throttle %, see that file's `_meta`). Used to
+   * derive `startFuelKg` as `trackFuelPerLapKg * totalLaps + reserveFuelKg`
+   * when `startFuelKg` isn't supplied directly — ignored if `startFuelKg`
+   * is set. Resolved 2026-07-10.
+   */
+  trackFuelPerLapKg?: number;
   reserveFuelKg?: number;
   secondsPerKg?: number;
   couplingFactor?: number;
+  /** Confidence tag for `trackFuelPerLapKg`, propagated into assumptionFlags per the data-teammate sourceConfidence convention. */
+  sourceConfidence?: ConfidenceLevel;
 }
 
 export interface FuelRemainingResult {
@@ -32,9 +44,19 @@ export function fuelRemaining(
   options: FuelOptions = {},
 ): FuelRemainingResult {
   const flags: string[] = [];
-  const startFuelKg =
-    options.startFuelKg ?? (flags.push('fuel_start_load_placeholder'), FUEL.startFuelKg);
   const reserveFuelKg = options.reserveFuelKg ?? 1.5;
+  let startFuelKg: number;
+  if (options.startFuelKg !== undefined) {
+    startFuelKg = options.startFuelKg;
+  } else if (options.trackFuelPerLapKg !== undefined) {
+    startFuelKg = options.trackFuelPerLapKg * totalLaps + reserveFuelKg;
+    if (options.sourceConfidence && options.sourceConfidence !== 'confirmed') {
+      flags.push(`fuel_per_lap_source_confidence_${options.sourceConfidence}`);
+    }
+  } else {
+    flags.push('fuel_start_load_placeholder');
+    startFuelKg = FUEL.startFuelKg;
+  }
   const burnPerLap = (startFuelKg - reserveFuelKg) / totalLaps;
   const fuelRemainingKg = Math.max(reserveFuelKg, startFuelKg - burnPerLap * (lap - 1));
   return { fuelRemainingKg: round3(fuelRemainingKg), assumptionFlags: dedupe(flags) };

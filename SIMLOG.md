@@ -51,6 +51,22 @@ laptime.
 - Cold-tyre warmup penalty (~0.6s on lap 1, PLACEHOLDER, decaying linearly
   to 0 over `warmupLaps`) — reasonable but unsourced.
 
+**Resolved 2026-07-10 (later):** `DEFAULT_BASE_LAP_TIME_SEC = 90s` fallback
+in `strategyCompare.ts` unchanged, but `RaceSimInput.baseLapTimeSec` is now
+documented as the intended landing spot for data teammate's
+`data/track-lap-reference.json` `referenceLapTimeSec` (the circuit's
+official GP lap record — a floor/reference value, same role the flat 90s
+placeholder played; real race pace comes out higher once tyre/fuel deltas
+are added on top, per data's own note). Added
+`RaceSimInput.baseLapTimeSourceConfidence` so non-`confirmed` track values
+(all but Bahrain/Monaco, per data's file) surface as
+`base_lap_time_source_confidence_<level>` in `assumptionsUsed` instead of
+silently reading as exact fact — same `sourceConfidence` convention as
+`pitStopLoss.ts`/`safetyCar.ts`. No functional change to the calculation
+itself (this field was already caller-suppliable); this closes the loop
+now that a real source exists. Caller (visual) is responsible for the
+JSON lookup, same pattern as track-tyre-characteristics.json.
+
 **Resolved 2026-07-10:** track-specific abrasiveness is now wired in.
 Data teammate supplied `data/track-tyre-characteristics.json` — a 1
 (gentle, e.g. Monaco/Monza) to 5 (punishing, e.g. Silverstone/Lusail)
@@ -83,10 +99,23 @@ load through the tyre).
 - `secondsPerKg = 0.032` — within the commonly-cited real-F1 range
   (~0.03-0.035s/kg/lap), not F1-25-specific.
 - `fuelBurnPerLapKg = 1.6`, `startFuelKg = 110` — generic full-race
-  placeholders; real value should scale with race distance/track fuel
-  consumption once data teammate supplies it.
+  placeholders, still used as the last-resort fallback when neither
+  `startFuelKg` nor `trackFuelPerLapKg` is supplied.
 - `tyreWearFuelCouplingFactor = 0.15` — invented, qualitatively reasonable
   coupling strength, not measured.
+
+**Resolved 2026-07-10:** `FuelOptions` gained `trackFuelPerLapKg` +
+`sourceConfidence`. Pass data teammate's
+`data/track-lap-reference.json` `fuelPerLapKg` (their explicit,
+documented-not-measured formula: `0.30*circuitLengthKm + 0.15 +
+(fullThrottlePct-60)/100*0.4`) and `fuelRemaining()` derives
+`startFuelKg = trackFuelPerLapKg * totalLaps + reserveFuelKg`
+automatically — no need for the caller to hand-roll that arithmetic.
+Ignored if `startFuelKg` is passed directly. Non-`confirmed` values surface
+as `fuel_per_lap_source_confidence_<level>` (every circuit in data's file
+is `reasonable_estimate`, so this will always fire when wired in — expected,
+not a bug). Verified: Monaco-like 1.07kg/lap over 78 laps → 84.96kg start
+load, vs the flat 110kg placeholder.
 
 ---
 
@@ -261,11 +290,18 @@ by real research):**
   `socRegenPerLap = 12` — invented abstract SoC units, no in-game figures
   published.
 - `overtakeModeGainSec = 0.45s` per activation — illustrative.
-- `activeAeroDragDeltaPct = 0.12`, flat `estimatedLapTimeGainSec = 0.25s`
-  in `activeAeroBenefit()` — flat estimate; should become
-  track-straight-proportion-aware once data teammate has per-track
-  straight-line percentage data (explicitly noted as a next step in the
-  function's own doc comment).
+- `activeAeroDragDeltaPct = 0.12` — still a flat invented estimate.
+  `estimatedLapTimeGainSec` is now track-aware (**resolved 2026-07-10**):
+  `activeAeroBenefit(fullThrottlePct?, sourceConfidence?)` scales the
+  0.25s reference gain by `fullThrottlePct / 65` (65% = rough
+  calendar-average full-throttle %, itself a PLACEHOLDER guess at what the
+  original flat estimate was implicitly calibrated against) when the
+  caller passes data teammate's `data/track-lap-reference.json`
+  `fullThrottlePct`. Falls back to the flat 0.25s if omitted. Verified:
+  Monaco (40%) → 0.154s, Monza (82%) → 0.315s vs the 0.25s flat baseline —
+  correct direction (more straight-line time = bigger Active Aero payoff).
+  Still explicitly a shape approximation, not calibrated to real Active
+  Aero telemetry.
 - **Updated 2026-07-10:** No confirmed in-game 2025-vs-2026 laptime delta
   exists yet, but data teammate supplied a real-world sourced range:
   FIA/Tombazis predicted 2026 cars ~1.0-2.5s/lap slower than 2025
@@ -410,3 +446,13 @@ gap starts at 0 and diverges as expected once tyre age/pit timing differ.
   stub (explicitly flagged to sim in CLAUDE.md). Refactored
   `strategyCompare.ts`'s per-lap loop into exported `perLapStrategyTrace()`
   so both consumers share one lap-by-lap implementation.
+- **2026-07-10 (later still):** Data teammate landed
+  `data/track-lap-reference.json` (per-circuit `referenceLapTimeSec`,
+  `fuelPerLapKg`, `fullThrottlePct`, `overtakingDifficulty`). Wired all
+  three sim-relevant fields same day per the "sim's flagged placeholder =
+  next priority" convention: `RaceSimInput.baseLapTimeSec` +
+  `baseLapTimeSourceConfidence` (item 1), `FuelOptions.trackFuelPerLapKg` +
+  `sourceConfidence` in `fuel.ts` (item 2), and
+  `activeAeroBenefit(fullThrottlePct?, sourceConfidence?)` in `ers.ts`
+  (item 8). `overtakingDifficulty` is ai's field to consume (ReferenceFact
+  grounding), not sim's. See items 1, 2, and 8 above for details.

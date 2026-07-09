@@ -25,6 +25,7 @@ import type {
   RaceContext,
   MarginAnalysis,
   TyreCompound,
+  ConfidenceLevel,
 } from '../ai/types';
 import { tyreLapTimeDelta, estimateTyreLife, type DegradationOptions } from './degradation';
 import { fuelEffectForLap, type FuelOptions } from './fuel';
@@ -54,10 +55,16 @@ export interface RaceSimInput {
   /**
    * Track's absolute baseline laptime (seconds) at zero fuel effect / peak
    * tyre grip, i.e. before tier/class offsets and tyre/fuel deltas are
-   * added. PLACEHOLDER default used if omitted — real value should come
-   * from the data teammate's track reference file.
+   * added. PLACEHOLDER (flat 90s generic-track default) used if omitted.
+   * Resolved 2026-07-10: pass data teammate's
+   * data/track-lap-reference.json `referenceLapTimeSec` here — it's a
+   * floor/reference value (the circuit's official GP lap record), same
+   * role this field always played; real race pace naturally comes out
+   * higher once this function's own tyre/fuel deltas are added on top.
    */
   baseLapTimeSec?: number;
+  /** Confidence tag for `baseLapTimeSec`, propagated into assumptionsUsed per the data-teammate sourceConfidence convention. */
+  baseLapTimeSourceConfidence?: ConfidenceLevel;
   /**
    * Per-circuit tyre stress rating (1 gentle - 5 punishing), from data
    * teammate's data/track-tyre-characteristics.json. Omit to leave wear
@@ -73,7 +80,11 @@ const CLOSE_CALL_THRESHOLD_SEC = 2.0; // PLACEHOLDER — under this margin, flag
 
 export function compareStrategies(input: RaceSimInput): StrategyComparison {
   const globalFlags = new Set<string>();
-  if (input.baseLapTimeSec === undefined) globalFlags.add('base_lap_time_generic_placeholder');
+  if (input.baseLapTimeSec === undefined) {
+    globalFlags.add('base_lap_time_generic_placeholder');
+  } else if (input.baseLapTimeSourceConfidence && input.baseLapTimeSourceConfidence !== 'confirmed') {
+    globalFlags.add(`base_lap_time_source_confidence_${input.baseLapTimeSourceConfidence}`);
+  }
   const baseLapTimeSec = input.baseLapTimeSec ?? DEFAULT_BASE_LAP_TIME_SEC;
 
   const degOptions: DegradationOptions = {

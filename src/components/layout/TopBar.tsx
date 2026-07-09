@@ -1,7 +1,6 @@
 import { Radio } from 'lucide-react';
 import type { AppSelection } from '../../types/session';
-import { CAR_CLASSES } from '../../mocks/carClasses';
-import { TRACKS } from '../../mocks/tracks';
+import { CAR_CLASSES, TRACKS } from '../../lib/dataAdapters';
 import { PERFORMANCE_TIERS } from '../../lib/tierMeta';
 
 interface TopBarProps {

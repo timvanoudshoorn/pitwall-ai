@@ -2,7 +2,7 @@ import { CloudRain, Sun, CloudDrizzle, CloudSun } from 'lucide-react';
 import { Panel } from '../components/ui/Panel';
 import type { AppSelection, QualifyingFormat } from '../types/session';
 import type { WeatherCondition } from '../ai/types';
-import { TRACKS } from '../mocks/tracks';
+import { TRACKS } from '../lib/dataAdapters';
 
 interface RaceParametersScreenProps {
   selection: AppSelection;

@@ -1,8 +1,7 @@
 import { Mountain, MapPin, Radar } from 'lucide-react';
 import { Panel } from '../components/ui/Panel';
 import { TierDial } from '../components/ui/TierDial';
-import { CAR_CLASSES } from '../mocks/carClasses';
-import { TRACKS } from '../mocks/tracks';
+import { CAR_CLASSES, TRACKS } from '../lib/dataAdapters';
 import { trackSchematicPath } from '../lib/trackSchematic';
 import type { AppSelection } from '../types/session';
 

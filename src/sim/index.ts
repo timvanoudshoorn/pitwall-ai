@@ -10,6 +10,7 @@ export * from './fuel';
 export * from './pitStopLoss';
 export * from './undercutOvercut';
 export * from './strategyCompare';
+export * from './raceGapEvolution';
 export * from './safetyCar';
 export * from './weather';
 export * from './ers';

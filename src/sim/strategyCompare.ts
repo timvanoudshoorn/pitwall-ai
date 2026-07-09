@@ -160,22 +160,40 @@ interface EvaluatedStrategy {
   plannedLapsSum: number;
 }
 
-function evaluateStrategy(
+/**
+ * Per-lap cumulative race time for one strategy plan, lap-by-lap
+ * (tyre delta + fuel delta + a constant per-lap offset for
+ * class/tier/base laptime, plus pit loss applied on a stint's endLap).
+ * Exported so `raceGapEvolution.ts` can reuse the exact same lap-by-lap
+ * math to diff two candidates without duplicating/drifting from this
+ * logic — see SIMLOG.md #5 and the gap-evolution section.
+ *
+ * Returns `{ stints, pitStops, cumulativeTimeSec }` where
+ * `cumulativeTimeSec[n]` is total elapsed race time through lap `n`
+ * (index 0 = 0, i.e. race start).
+ */
+export function perLapStrategyTrace(
   plan: StrategyPlan,
   ctx: {
     totalLaps: number;
     baseLapTimeSec: number;
-    tierOffset: number;
-    classOffset: number;
+    /** Constant per-lap offset (e.g. class + tier pace gap). Pass 0 to omit — see raceGapEvolution.ts's isolated-car-pace note. */
+    perLapOffsetSec: number;
     pitLossSec: number;
     degOptions: DegradationOptions;
     fuelOptions: FuelOptions;
-    globalFlags: Set<string>;
   },
-): EvaluatedStrategy {
+): {
+  stints: Stint[];
+  pitStops: PitStop[];
+  cumulativeTimeSec: number[];
+  assumptionFlags: string[];
+  plannedLapsSum: number;
+} {
   const flags = new Set<string>();
   const stints: Stint[] = [];
   const pitStops: PitStop[] = [];
+  const cumulativeTimeSec: number[] = [0];
   let totalTimeSec = 0;
   let lapCursor = 0; // laps completed before this stint
   const plannedLapsSum = plan.stints.reduce((s, st) => s + st.plannedLaps, 0);
@@ -205,9 +223,9 @@ function evaluateStrategy(
       );
       ff.forEach((f) => flags.add(f));
 
-      const lapTimeSec =
-        ctx.baseLapTimeSec + ctx.classOffset + ctx.tierOffset + tyreDelta + fuelDelta;
+      const lapTimeSec = ctx.baseLapTimeSec + ctx.perLapOffsetSec + tyreDelta + fuelDelta;
       totalTimeSec += lapTimeSec;
+      cumulativeTimeSec.push(round3(totalTimeSec));
     }
 
     stints.push({
@@ -221,11 +239,48 @@ function evaluateStrategy(
     // A stop happens after every stint except the last.
     if (stintIdx < plan.stints.length - 1) {
       totalTimeSec += ctx.pitLossSec;
+      cumulativeTimeSec[cumulativeTimeSec.length - 1] = round3(totalTimeSec);
       pitStops.push({ lap: endLap, pitLossSeconds: round3(ctx.pitLossSec) });
     }
 
     lapCursor = endLap;
   });
+
+  return {
+    stints,
+    pitStops,
+    cumulativeTimeSec,
+    assumptionFlags: [...flags],
+    plannedLapsSum,
+  };
+}
+
+function evaluateStrategy(
+  plan: StrategyPlan,
+  ctx: {
+    totalLaps: number;
+    baseLapTimeSec: number;
+    tierOffset: number;
+    classOffset: number;
+    pitLossSec: number;
+    degOptions: DegradationOptions;
+    fuelOptions: FuelOptions;
+    globalFlags: Set<string>;
+  },
+): EvaluatedStrategy {
+  const trace = perLapStrategyTrace(plan, {
+    totalLaps: ctx.totalLaps,
+    baseLapTimeSec: ctx.baseLapTimeSec,
+    perLapOffsetSec: ctx.classOffset + ctx.tierOffset,
+    pitLossSec: ctx.pitLossSec,
+    degOptions: ctx.degOptions,
+    fuelOptions: ctx.fuelOptions,
+  });
+  const flags = new Set(trace.assumptionFlags);
+  const stints = trace.stints;
+  const pitStops = trace.pitStops;
+  const totalTimeSec = trace.cumulativeTimeSec[trace.cumulativeTimeSec.length - 1];
+  const plannedLapsSum = trace.plannedLapsSum;
 
   const flagCount = flags.size;
   const confidence: EvaluatedStrategy['confidence'] =

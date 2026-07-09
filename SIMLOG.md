@@ -345,6 +345,41 @@ worth modeling — deferred as a v2 refinement, not core to the backlog.
 
 ---
 
+## 10. Lap-by-lap gap evolution — `raceGapEvolution.ts`
+
+**Approach:** `visual`'s Strategy Battle screen was stubbed with a
+placeholder panel explicitly flagged to sim (CLAUDE.md's "What's still
+open" list: "sim hasn't produced a per-lap position/gap series"). Rather
+than re-deriving lap-by-lap math separately, refactored
+`strategyCompare.ts`'s inner per-lap loop into an exported
+`perLapStrategyTrace()` (same tyre/fuel/pit-loss math, now also returning
+`cumulativeTimeSec[]` indexed by lap) so `compareStrategies()`'s headline
+`predictedTotalRaceTimeSeconds` and this chart's gap series can never
+silently drift apart. `raceGapEvolution()` calls it once per candidate and
+diffs the two cumulative-time arrays lap-by-lap.
+
+**Sign convention:** `gapSeconds > 0` = candidate A ahead (broadcast-style
+gap readout, A is always the reference car). Also returns each candidate's
+pit laps so the chart can mark pit-lane events on the gap line.
+
+**Known limitation (inherited from `strategyCompare.ts`, documented not
+hidden):** isolated-car pace only — assumes the SAME car (class/tier/track
+held constant) running two different strategies, not two different cars'
+actual on-track gap (that needs the not-yet-built multi-car race-order/
+traffic model). Because both candidates share one car, class+tier pace
+offset cancels out of the gap and is deliberately omitted from this
+calculation (see the file's doc comment for how to extend it if a future
+use case needs to diff two different cars).
+
+**No new placeholders** — reuses `degradation.ts`/`fuel.ts`'s existing
+ones, surfaced the same way via `assumptionFlags`.
+
+Verified: 20-lap smoke test, 1-stop (M10/H10) vs 2-stop (S7/S7/M6)
+candidate — 21 points (lap 0..20), pit laps correctly at [10] and [7,14],
+gap starts at 0 and diverges as expected once tyre age/pit timing differ.
+
+---
+
 ## Change log
 
 - **2026-07-09:** Initial build of all 9 backlog items (degradation,
@@ -368,3 +403,10 @@ worth modeling — deferred as a v2 refinement, not core to the backlog.
   Corrected `f1_2026_season_pack.basePaceOffsetSec` from an erroneous
   -0.1s (2026 faster) to +2.75s (2026 slower, per real-world 2026 season
   results data supplied) — see item 1 and item 8 sections above.
+- **2026-07-10 (later):** Picked up the sim role from a predecessor
+  session; all 9 backlog items confirmed complete and stable
+  (`git log` clean since last handoff). Built item 10,
+  `raceGapEvolution.ts`, to unblock `visual`'s Strategy Battle screen
+  stub (explicitly flagged to sim in CLAUDE.md). Refactored
+  `strategyCompare.ts`'s per-lap loop into exported `perLapStrategyTrace()`
+  so both consumers share one lap-by-lap implementation.

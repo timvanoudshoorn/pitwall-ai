@@ -49,3 +49,8 @@ Sim landed the performance-tier reconciliation (commit af4a55c, SIMLOG.md item 9
 
 **Updated `data/car-classes.json`** (`f1_2026.openQuestions`)
 - Previously this field said no 2025-vs-2026 laptime delta was confirmed. Found real-world sourced data since: FIA's Nikolas Tombazis predicted 2026 cars ~1.0-2.5s/lap slower pre-season; actual 2026 Australian GP results came in slower than that (Russell's pole ~3.4s slower than Norris's 2025 Melbourne pole; Verstappen's fastest lap ~2.1s slower than 2025's). Recommended sim use ~2-3.5s/lap slower as a reasonable_estimate range if a baseline is needed now, sourced to real-world 2026 season results rather than in-game F1 25 telemetry (which still isn't directly confirmed/observed).
+
+**Sim wired both in (commit 89bd66a, SIMLOG items 1 and 8):**
+- `trackAbrasivenessMultiplier(rating)` in degradation.ts reads `abrasivenessRating` straight out of our JSON at call time (rating 3 = neutral 1.0x, ±10%/step — sim's own linear mapping, flagged placeholder on their side) rather than duplicating the data into their constants, so `track-tyre-characteristics.json` stays the single source of truth. Sanity-checked against Monaco (1) vs Silverstone (5).
+- Caught and fixed a sign error in their own prior placeholder (`f1_2026_season_pack.basePaceOffsetSec` had implied 2026 cars were faster) — now set to +2.75s, the midpoint of our recommended 2-3.5s range, documented as real-world-sourced not in-game-confirmed per our caveat.
+- Nothing currently blocking sim.

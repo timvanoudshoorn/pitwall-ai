@@ -66,11 +66,19 @@ Resuming QA after several commits since predecessor's last check, particularly:
 - NoComparisonNotice component: shared fallback UI (single source of truth)
 - PitWindowScreen: wired to real strategies (timeline unchanged)
 - StrategyBattleScreen: uses marginAnalysis.closestPairIds (picks genuinely close pair, not arbitrary)
-- Lap-by-lap gap chart: properly stubbed, pending sim's per-lap data
-- All 8 screens off mocks except: AI Explanation live API (no safe key), Battle gap chart (needs sim data)
+- All 8 screens off mocks except: AI Explanation live API (no safe key)
 - tsc clean, headless-Chromium verified with real Silverstone data, zero console errors
 
-**INTEGRATION FULLY COMPLETE:** All real data flows working correctly across all 8 screens.
+**GAP CHART WIRING VERIFIED (commit 4f6ec4a):** ✓ COMPLETE
+- resolveRaceSimContext() refactor: extracted shared context (track, pit loss, safety car, base laptime, abrasiveness)
+- buildStrategyComparison() and buildGapEvolution() both call resolveRaceSimContext() → identical inputs by construction (can't drift)
+- buildStrategyComparison() uses baseLapTimeSec (optional) → compareStrategies applies its own placeholder flag
+- buildGapEvolution() uses resolvedBaseLapTimeSec (concrete) → raceGapEvolution requires concrete number
+- GapEvolutionChart.tsx: renders real lap-by-lap gap, pit-lane laps marked as dashed ticks (shows who pitted first)
+- Strategy Battle screen: no more placeholder, shows real gap evolution with candidate names
+- tsc clean, headless-Chromium verified with real Silverstone 2-stop vs 3-stop gap, steps visible at pit laps, zero console errors
+
+**INTEGRATION FULLY COMPLETE:** All 8 screens wired, all real data flowing correctly. Only intentional stub remaining: AI Explanation live Claude API (infra decision, not wiring gap).
 
 **Verified Complete (pre-wiring):**
 - tsc and oxlint: clean (no errors)

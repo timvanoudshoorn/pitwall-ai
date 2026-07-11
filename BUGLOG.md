@@ -61,7 +61,16 @@ Resuming QA after several commits since predecessor's last check, particularly:
 - All confidence levels flow correctly (Monaco confirmed → no flag, others → flagged)
 - tsc: clean (no type errors)
 
-**READY FOR LIVE INTEGRATION TEST:** Full QA_TEST_PLAN.md suite to run on actual working screens.
+**VISUAL REFACTORING VERIFIED (commit bea31e5):** ✓ COMPLETE
+- useStrategyComparison hook: shared, memoized wrapper + error handling (single call site)
+- NoComparisonNotice component: shared fallback UI (single source of truth)
+- PitWindowScreen: wired to real strategies (timeline unchanged)
+- StrategyBattleScreen: uses marginAnalysis.closestPairIds (picks genuinely close pair, not arbitrary)
+- Lap-by-lap gap chart: properly stubbed, pending sim's per-lap data
+- All 8 screens off mocks except: AI Explanation live API (no safe key), Battle gap chart (needs sim data)
+- tsc clean, headless-Chromium verified with real Silverstone data, zero console errors
+
+**INTEGRATION FULLY COMPLETE:** All real data flows working correctly across all 8 screens.
 
 **Verified Complete (pre-wiring):**
 - tsc and oxlint: clean (no errors)

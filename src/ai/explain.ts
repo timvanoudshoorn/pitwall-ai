@@ -17,9 +17,9 @@ export async function generateExplanation(
   request: ExplanationRequest,
   options: { model?: string } = {},
 ): Promise<ExplanationResult> {
-  const { mode, comparison, compareStrategyIds, referenceFacts = [] } = request;
+  const { mode, comparison, compareStrategyIds, referenceFacts = [], telemetryContext } = request;
 
-  const prompt = buildPrompt(mode, comparison, compareStrategyIds, referenceFacts);
+  const prompt = buildPrompt(mode, comparison, compareStrategyIds, referenceFacts, telemetryContext);
   const result = await callClaudeForExplanation(client, prompt, options);
 
   const allowedNumbers = buildAllowedNumbers(comparison, referenceFacts, prompt.groundedExtras ?? []);
@@ -49,10 +49,11 @@ export async function generateRecommendationExplanation(
   comparison: ExplanationRequest['comparison'],
   referenceFacts: ExplanationRequest['referenceFacts'] = [],
   options: { model?: string } = {},
+  telemetryContext?: ExplanationRequest['telemetryContext'],
 ): Promise<ExplanationResult> {
   return generateExplanation(
     client,
-    { mode: 'recommendation', comparison, referenceFacts },
+    { mode: 'recommendation', comparison, referenceFacts, telemetryContext },
     options,
   );
 }
@@ -63,10 +64,11 @@ export async function generateWhyNotAlternativeExplanation(
   compareStrategyIds?: [string, string],
   referenceFacts: ExplanationRequest['referenceFacts'] = [],
   options: { model?: string } = {},
+  telemetryContext?: ExplanationRequest['telemetryContext'],
 ): Promise<ExplanationResult> {
   return generateExplanation(
     client,
-    { mode: 'why_not_alternative', comparison, compareStrategyIds, referenceFacts },
+    { mode: 'why_not_alternative', comparison, compareStrategyIds, referenceFacts, telemetryContext },
     options,
   );
 }

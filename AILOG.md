@@ -7,6 +7,88 @@ Owner: `ai` teammate. Files: `src/ai/*`.
 
 ---
 
+## 2026-07-11 — Telemetry-aware explanation mode (backlog #4 closed)
+
+Sim shipped the telemetry-import stretch feature (commit `76ce205`,
+`src/sim/telemetry.ts#importTelemetry()`, SIMLOG.md #11) and explicitly
+flagged it as unblocking this backlog item, so picked it up immediately.
+
+**What it does:** takes a raw lap-time array, filters outliers (107%-of-
+fastest cutoff), and computes one personal pace offset (sec/lap and
+percent-off-ultimate-pace) vs the class/tier baseline the user already
+selected. `strategyCompare.ts` folds `personalPaceOffsetSec` additively
+into `classOffset`, applied identically to every candidate strategy —
+confirmed by reading `compareStrategies()` directly: `classOffset` is
+computed once and passed unchanged into every `evaluateStrategy()` call,
+and `degOptions` (tyre-wear inputs) never receives the personal offset at
+all. So the recalibration is pace-only and uniform across candidates —
+it never changes *why* one strategy beats another, only what the
+absolute predicted times are.
+
+**Where the grounding gap was:** exactly the same shape of problem as the
+undercut/overcut mechanism (see 2026-07-10 entry below). Sim only
+surfaces this as an opaque `assumptionsUsed` flag string
+(`personal_pace_telemetry_applied`, plus a confidence flag if not high)
+— the actual offset number, representative lap count, and confidence
+basis are not fields anywhere in `StrategyComparison`. Without wiring
+something new, the model would have no grounded way to reference the
+user's own pace at all (correctly refusing to, per the grounding rules)
+even in a mode explicitly meant to explain around it.
+
+**What was built:**
+- `src/ai/telemetryFacts.ts` — `formatTelemetryFact(telemetry)` formats
+  sim's `TelemetryImportResult` into a `PERSONAL PACE` fact block:
+  representative pace, kept/excluded lap counts, the offset (sec + pct),
+  and a confidence caveat when not `high`.
+- `ExplanationRequest` (types.ts) gained an optional `telemetryContext?:
+  TelemetryImportResult` field (imports the type straight from
+  `sim/telemetry.ts`, same consumer pattern `mechanismFacts.ts` already
+  uses for `sim/undercutOvercut.ts`).
+- `promptBuilder.ts` — both `buildRecommendationPrompt` and
+  `buildWhyNotAlternativePrompt` take an optional `telemetryContext` param,
+  append the `PERSONAL PACE` block to `FACTS` when present, and add it to
+  `groundedExtras` so the grounding checker's allow-list actually includes
+  its numbers. Added `GROUNDING_RULES` rule #7: if the block is present,
+  the predicted times already reflect it uniformly across candidates —
+  never claim it explains why one strategy wins, never claim tyre-wear or
+  fuel behavior was personalized.
+- `explain.ts` — threads `telemetryContext` from `ExplanationRequest`
+  through to `buildPrompt`; the two convenience wrappers
+  (`generateRecommendationExplanation` / `generateWhyNotAlternativeExplanation`)
+  also gained an optional trailing `telemetryContext` param for callers
+  that don't want to build a full request object.
+- `mockFixtures.ts` — `MOCK_TELEMETRY_CONTEXT`, built by calling sim's real
+  `importTelemetry()` (10 synthetic laps, one 94.6s outlier) rather than
+  hand-faking the result shape — same "call the real function" principle
+  already used for the undercut/overcut mechanism fixture, so this can't
+  silently drift from what sim actually returns.
+
+**Hallucination risk identified and guarded against before any live
+generation:** the obvious plausible-sounding elaboration a model would
+reach for here is "your fast in-laps mean your tyres last longer" or
+"strategy X suits your pace better" — both false, since the offset is a
+flat per-lap shift applied identically to every candidate and never
+touches degradation/fuel modeling. `formatTelemetryFact()`'s own
+IMPORTANT note and `GROUNDING_RULES` rule #7 both say this explicitly
+rather than leaving it inferrable, same pattern as the window-vs-full-race
+disambiguation note on the undercut/overcut mechanism block.
+
+Verified via smoke test (`npx tsx`, scratch file deleted after):
+`MOCK_TELEMETRY_CONTEXT` computes a real `-1.043s/lap` offset (9 laps
+kept, 1 outlier excluded, `medium` confidence); the `PERSONAL PACE` block
+appears in both prompt modes' `FACTS` when telemetry is passed and is
+absent when it isn't; `representativeLapSec`/`personalPaceOffsetSec` pass
+the grounding checker cleanly via `groundedExtras`; a synthetic
+explanation correctly citing the real offset produces zero warnings; a
+synthetic fabricated "tyre life extended to 55 laps" claim is still
+caught. `tsc --noEmit -p tsconfig.app.json` and `oxlint src/ai` both clean.
+
+Not yet wired into any UI call site — that's visual's screen, same as
+every other explanation mode; this closes the "telemetry-aware
+explanation mode" backlog item on the reasoning-layer side only.
+
+---
+
 ## 2026-07-10 — Sourced overtaking-difficulty fact replaces hand-written Monaco placeholder
 
 Followed up on the "nice to have" I flagged to `data`: a sourceable

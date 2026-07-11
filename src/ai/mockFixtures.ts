@@ -9,6 +9,7 @@
  */
 
 import { buildTrackReferenceFacts } from './trackReferenceFacts.ts';
+import { importTelemetry } from '../sim/telemetry.ts';
 import type { ReferenceFact, StrategyComparison } from './types.ts';
 
 /** A clear-cut case: 2-stop wins comfortably over a 1-stop. */
@@ -171,6 +172,22 @@ export const MOCK_WET_WEATHER: StrategyComparison = {
     'safety_car_model_default_placeholder',
   ],
 };
+
+/**
+ * Personal-pace telemetry context to pair with MOCK_CLEAR_WINNER (same
+ * track/class/tier: Silverstone, f1_2025, contender) — a driver who's
+ * consistently faster than the model's generic contender-tier assumption.
+ * Built by calling sim's real `importTelemetry()` rather than hand-faking
+ * its output shape, same principle as calling `undercutOvercutDelta()`
+ * directly in mechanismFacts.ts: exercise the real function so the
+ * fixture can't drift from what sim actually returns.
+ */
+export const MOCK_TELEMETRY_CONTEXT = importTelemetry({
+  lapTimesSec: [87.9, 88.1, 87.8, 88.4, 87.7, 88.0, 87.9, 88.2, 87.85, 94.6],
+  carClass: 'f1_2025',
+  performanceTier: 'contender',
+  baseLapTimeSec: 88.5,
+});
 
 /**
  * The Monaco overtaking-difficulty fact used to be hand-written placeholder

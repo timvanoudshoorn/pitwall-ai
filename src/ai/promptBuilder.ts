@@ -12,12 +12,14 @@
  */
 
 import { deriveUndercutOvercutMechanism, formatMechanismFact } from './mechanismFacts.ts';
+import { formatTelemetryFact } from './telemetryFacts.ts';
 import type {
   ExplanationMode,
   ReferenceFact,
   StrategyCandidate,
   StrategyComparison,
 } from './types.ts';
+import type { TelemetryImportResult } from '../sim/telemetry.ts';
 
 const GROUNDING_RULES = `
 GROUNDING RULES — these override any instinct to sound more complete or authoritative:
@@ -45,6 +47,10 @@ GROUNDING RULES — these override any instinct to sound more complete or author
    likelihood/contingency instead ("if rain arrives," "given the elevated safety-car
    probability this race"), and only pair it with a specific lap if the strategy candidate
    itself is described as a reactive/contingency plan already keyed to that lap.
+7. If a PERSONAL PACE block is present, it means the predicted times in FACTS already reflect
+   this driver's own recorded pace, applied identically to every candidate. Never claim it
+   explains why one strategy beats another, and never claim tyre-wear or fuel behavior was
+   personalized — see the block's own IMPORTANT note.
 `.trim();
 
 const PERSONA = `
@@ -119,7 +125,9 @@ export interface BuiltPrompt {
 export function buildRecommendationPrompt(
   comparison: StrategyComparison,
   referenceFacts: ReferenceFact[] = [],
+  telemetryContext?: TelemetryImportResult,
 ): BuiltPrompt {
+  const telemetryBlock = telemetryContext ? `\n\n${formatTelemetryFact(telemetryContext)}` : '';
   const system = `${PERSONA}\n\n${GROUNDING_RULES}`;
   const user = `
 Explain why the recommended strategy is the right call, using only the facts below.
@@ -128,18 +136,19 @@ confidence. Keep it to a tight pit-wall-style briefing — a few sentences to a 
 paragraph, not an exhaustive report.
 
 FACTS:
-${formatFacts(comparison)}
+${formatFacts(comparison)}${telemetryBlock}
 
 REFERENCE CONTEXT (background facts you may cite, each with a confidence level):
 ${formatReferenceFacts(referenceFacts)}
 `.trim();
-  return { system, user };
+  return { system, user, groundedExtras: telemetryContext ? [telemetryContext] : undefined };
 }
 
 export function buildWhyNotAlternativePrompt(
   comparison: StrategyComparison,
   compareStrategyIds: [string, string],
   referenceFacts: ReferenceFact[] = [],
+  telemetryContext?: TelemetryImportResult,
 ): BuiltPrompt {
   const [idA, idB] = compareStrategyIds;
   const strategyA = comparison.strategies.find((s) => s.id === idA);
@@ -160,6 +169,7 @@ export function buildWhyNotAlternativePrompt(
   // or compound choices) — the prompt falls back to the general framing.
   const mechanism = deriveUndercutOvercutMechanism(comparison, idA, idB);
   const mechanismBlock = mechanism ? `\n\n${formatMechanismFact(mechanism)}` : '';
+  const telemetryBlock = telemetryContext ? `\n\n${formatTelemetryFact(telemetryContext)}` : '';
 
   const system = `${PERSONA}\n\n${GROUNDING_RULES}`;
   const user = `
@@ -172,12 +182,16 @@ compound choice under the given weather/safety-car odds) rather than a generic "
 is faster" statement.${mechanism ? ' An UNDERCUT/OVERCUT MECHANISM block is included below — use its verdict and numbers directly rather than reasoning about pit timing qualitatively.' : ''}
 
 FACTS:
-${formatFacts(comparison, [idA, idB])}${mechanismBlock}
+${formatFacts(comparison, [idA, idB])}${mechanismBlock}${telemetryBlock}
 
 REFERENCE CONTEXT (background facts you may cite, each with a confidence level):
 ${formatReferenceFacts(referenceFacts)}
 `.trim();
-  return { system, user, groundedExtras: mechanism ? [mechanism.result] : undefined };
+  const groundedExtras = [
+    ...(mechanism ? [mechanism.result] : []),
+    ...(telemetryContext ? [telemetryContext] : []),
+  ];
+  return { system, user, groundedExtras: groundedExtras.length > 0 ? groundedExtras : undefined };
 }
 
 export function buildPrompt(
@@ -185,10 +199,11 @@ export function buildPrompt(
   comparison: StrategyComparison,
   compareStrategyIds: [string, string] | undefined,
   referenceFacts: ReferenceFact[] = [],
+  telemetryContext?: TelemetryImportResult,
 ): BuiltPrompt {
   if (mode === 'recommendation') {
-    return buildRecommendationPrompt(comparison, referenceFacts);
+    return buildRecommendationPrompt(comparison, referenceFacts, telemetryContext);
   }
   const ids = compareStrategyIds ?? comparison.marginAnalysis.closestPairIds;
-  return buildWhyNotAlternativePrompt(comparison, ids, referenceFacts);
+  return buildWhyNotAlternativePrompt(comparison, ids, referenceFacts, telemetryContext);
 }

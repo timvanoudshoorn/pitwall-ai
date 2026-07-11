@@ -19,6 +19,8 @@
  * -----------------------------------------------------------------------
  */
 
+import type { TelemetryImportResult } from '../sim/telemetry.ts';
+
 export type TyreCompound = 'soft' | 'medium' | 'hard' | 'intermediate' | 'wet';
 
 export type WeatherCondition = 'dry' | 'damp' | 'wet' | 'mixed';
@@ -93,6 +95,17 @@ export interface ExplanationRequest {
   /** Required for mode === 'why_not_alternative'. Defaults to the two closest candidates. */
   compareStrategyIds?: [string, string];
   referenceFacts?: ReferenceFact[];
+  /**
+   * Optional: sim's `importTelemetry()` result (see `sim/telemetry.ts`),
+   * if the user has recalibrated pace from their own recorded laps and
+   * that recalibration was applied to THIS comparison (i.e.
+   * `assumptionsUsed` contains `personal_pace_telemetry_applied`). When
+   * present, the prompt includes a PERSONAL PACE fact block and its
+   * numbers are added to the grounding allow-list — see
+   * `telemetryFacts.ts`. Left undefined for a comparison that wasn't
+   * telemetry-recalibrated; nothing telemetry-specific is added.
+   */
+  telemetryContext?: TelemetryImportResult;
 }
 
 export interface GroundingWarning {

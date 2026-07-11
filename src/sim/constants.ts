@@ -213,6 +213,48 @@ export const SAFETY_CAR_DEFAULTS = {
   pitLoss: { scPitLossFactor: 0.4, vscPitLossFactor: 0.6 },
 };
 
+/**
+ * Qualifying-format key: matches visual's UI-local `QualifyingFormat` type
+ * in `src/types/session.ts` value-for-value ('one_shot' | 'short_qualifying'
+ * | 'full_qualifying') by design — see SIMLOG.md #12 for why this became a
+ * sim concept (it was previously a stored-but-unused UI parameter with no
+ * effect on the math).
+ */
+export type QualifyingFormatKey = 'one_shot' | 'short_qualifying' | 'full_qualifying';
+
+export interface QualifyingFormatParams {
+  /** Multiplier on scProbabilityPct in safetyCar.ts — a more scattered/unpredictable grid means more contact-prone early-race squabbling. PLACEHOLDER, see SIMLOG.md #12. */
+  scProbabilityMultiplier: number;
+  /** Multiplier on vscProbabilityPct — smaller effect than SC, since VSC is more often mechanical/debris-driven than grid-position-driven. PLACEHOLDER. */
+  vscProbabilityMultiplier: number;
+  /**
+   * How much a given pace tier's starting grid position varies race-to-race
+   * under this format, relative to short_qualifying's baseline (1.0).
+   * Exposed for `ai` to reference in explanations; NOT currently consumed
+   * by any grid-position calculation (no full starting-grid model exists
+   * yet — see SIMLOG.md #12's documented limitation).
+   */
+  gridVarianceMultiplier: number;
+}
+
+/**
+ * PLACEHOLDER, not measured — motorsport-realistic qualitative reasoning:
+ * One-Shot Qualifying (single flying lap, no second chance) is the most
+ * luck/weather/traffic-sensitive format, so a small mistake produces a
+ * bigger grid-position swing than the driver's true pace would predict —
+ * scaled up. Short Qualifying (F1 25's default short-session format) is
+ * treated as the neutral baseline the existing SAFETY_CAR_DEFAULTS numbers
+ * were implicitly calibrated against. Full Qualifying (multi-session
+ * knockout format, closest to real F1 quali) gives every driver multiple
+ * representative laps, producing the most pace-accurate/calmest grid —
+ * scaled down.
+ */
+export const QUALIFYING_FORMATS: Record<QualifyingFormatKey, QualifyingFormatParams> = {
+  one_shot: { scProbabilityMultiplier: 1.25, vscProbabilityMultiplier: 1.1, gridVarianceMultiplier: 1.6 },
+  short_qualifying: { scProbabilityMultiplier: 1.0, vscProbabilityMultiplier: 1.0, gridVarianceMultiplier: 1.0 },
+  full_qualifying: { scProbabilityMultiplier: 0.9, vscProbabilityMultiplier: 0.95, gridVarianceMultiplier: 0.75 },
+};
+
 /** Weather defaults (PLACEHOLDER — see SIMLOG.md #7). */
 export const WEATHER_DEFAULTS = {
   defaultRainProbability: 0.15,

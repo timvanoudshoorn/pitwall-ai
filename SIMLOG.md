@@ -468,6 +468,71 @@ exactly this landing.
 
 ---
 
+## 12. Qualifying-format grid chaos — `constants.ts` + `safetyCar.ts`
+
+**Found by coordinator's audit (2026-07-11):** `qualifyingFormat`
+(One-Shot / Short Qualifying / Full Qualifying — original plan-doc scope,
+"qualifying-format-aware grid assumptions") was stored UI state in
+`src/types/session.ts`/`RaceParametersScreen.tsx` with **zero effect on
+any sim calculation** — confirmed by tracing it through
+`src/lib/raceSimAdapter.ts`'s `resolveRaceSimContext()`, which never reads
+`raceParameters.qualifyingFormat` at all. A genuinely dead/decorative
+parameter, not a placeholder-with-a-flag — worse, since nothing even
+signaled it was unused.
+
+**Model built:** qualifying format doesn't change race-distance pace (that
+model is deliberately not touched), but it plausibly changes how scattered
+the STARTING GRID is relative to true pace, which is a real motorsport
+effect on first-lap contact/incident risk — exactly the "SC/VSC exposure"
+hook the coordinator suggested. Added `QUALIFYING_FORMATS` to
+`constants.ts`: a `scProbabilityMultiplier`/`vscProbabilityMultiplier`
+per format, applied in `safetyCarProbability()` (new optional
+`qualifyingFormat` input) on top of whatever SC/VSC probability was
+already resolved (generic default or data-sourced override) — multiplies,
+doesn't replace, so it composes cleanly with the existing
+`sourceConfidence` machinery. New `qualifying_format_grid_chaos_placeholder`
+assumption flag when applied.
+
+**Reasoning per format (PLACEHOLDER multipliers, not measured, but
+qualitatively grounded):**
+- `one_shot` (single flying lap, no second chance) — most
+  luck/weather/traffic-sensitive format, so a small mistake or bad luck
+  produces a bigger grid-position swing than true pace would predict:
+  scProbabilityMultiplier 1.25, vscProbabilityMultiplier 1.1 (VSC scaled
+  up less — VSC is more often mechanical/debris-triggered than a direct
+  consequence of a scrappier grid).
+- `short_qualifying` — treated as the neutral 1.0 baseline the existing
+  `SAFETY_CAR_DEFAULTS`/data-sourced SC numbers were implicitly calibrated
+  against (no format-specific adjustment).
+- `full_qualifying` — multi-session knockout format giving every driver
+  several representative laps, closest to real F1 quali and the most
+  pace-accurate/calmest grid: scProbabilityMultiplier 0.9,
+  vscProbabilityMultiplier 0.95.
+
+Also added `gridVarianceMultiplier` per format (1.6 / 1.0 / 0.75) —
+exposed for `ai` to reference qualitatively in explanations ("One-Shot
+Qualifying tends to scramble the grid...") but **not** currently consumed
+by any grid-position calculation, since no full starting-grid-position
+model exists yet (documented limitation, not hidden — a real "predicted
+grid slot for a given pace tier" model would be the natural v2, but is a
+materially bigger scope than this pass).
+
+**Ownership note:** `QualifyingFormatKey` in `constants.ts` matches
+visual's `QualifyingFormat` type in `src/types/session.ts` value-for-value
+by design (`'one_shot' | 'short_qualifying' | 'full_qualifying'`) so no
+translation layer is needed — same pattern as `CarClassKey`/
+`PerformanceTierKey`. Did not edit `session.ts` myself (visual-owned);
+messaged them to wire `raceParameters.qualifyingFormat` into
+`safetyCarProbability()`'s new input inside `raceSimAdapter.ts`, and
+optionally re-export sim's type the same way `CarClassKey` already is.
+
+Verified: street circuit, SC/VSC overridden to 40%/30% — one_shot ->
+50%/33%, short_qualifying -> 40%/30% (unchanged), full_qualifying ->
+36%/28.5%, no format supplied -> 40%/30% with no new flag (fully
+backward-compatible, matches pre-existing behavior when omitted).
+
+---
+
 ## Change log
 
 - **2026-07-09:** Initial build of all 9 backlog items (degradation,
@@ -513,3 +578,11 @@ exactly this landing.
   that the core backlog is done end-to-end. Wired `personalPaceOffsetSec`
   into `strategyCompare.ts`'s `RaceSimInput`. Messaged `ai` directly since
   it unblocks their backlog item #4.
+- **2026-07-11 (later):** Coordinator's audit found `qualifyingFormat`
+  was dead UI state with zero effect on any calculation, despite being
+  original plan-doc scope ("qualifying-format-aware grid assumptions").
+  Built item 12: `QUALIFYING_FORMATS` in `constants.ts` +
+  `safetyCarProbability()`'s new `qualifyingFormat` input, scaling SC/VSC
+  probability for a more/less scattered starting grid. Messaged `visual`
+  to wire it in from `raceSimAdapter.ts` (visual-owned file, not edited
+  directly).

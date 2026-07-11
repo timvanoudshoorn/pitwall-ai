@@ -25,7 +25,7 @@
  */
 
 import type { ConfidenceLevel } from '../ai/types';
-import { SAFETY_CAR_DEFAULTS } from './constants';
+import { SAFETY_CAR_DEFAULTS, QUALIFYING_FORMATS, type QualifyingFormatKey } from './constants';
 
 export type CircuitType = 'permanent' | 'street';
 
@@ -45,6 +45,14 @@ export interface SafetyCarProbabilityInput {
    * as flat fact.
    */
   sourceConfidence?: ConfidenceLevel;
+  /**
+   * Qualifying format for this race (see `src/types/session.ts`'s
+   * `QualifyingFormat` on the visual side, `QualifyingFormatKey` here) —
+   * scales the SC/VSC probability for a more/less scattered starting grid.
+   * Omit to leave the probability format-agnostic (previous behavior).
+   * Resolved 2026-07-11, see SIMLOG.md #12.
+   */
+  qualifyingFormat?: QualifyingFormatKey;
 }
 
 export interface SafetyCarProbabilityResult {
@@ -69,15 +77,22 @@ export function safetyCarProbability(input: SafetyCarProbabilityInput): SafetyCa
       : SAFETY_CAR_DEFAULTS.genericPermanentCircuit;
   if (!input.circuitType) flags.push('safety_car_circuit_type_unknown_defaulted_permanent');
 
-  const scProbabilityPct =
+  let scProbabilityPct =
     input.scProbabilityPctOverride ??
     (flags.push('safety_car_probability_generic_placeholder'), defaults.scProbabilityPerRace * 100);
-  const vscProbabilityPct =
+  let vscProbabilityPct =
     input.vscProbabilityPctOverride ??
     (flags.push('vsc_probability_generic_placeholder'), defaults.vscProbabilityPerRace * 100);
 
   if (input.sourceConfidence && input.sourceConfidence !== 'confirmed') {
     flags.push(`safety_car_source_confidence_${input.sourceConfidence}`);
+  }
+
+  if (input.qualifyingFormat) {
+    const formatParams = QUALIFYING_FORMATS[input.qualifyingFormat];
+    scProbabilityPct = Math.min(100, scProbabilityPct * formatParams.scProbabilityMultiplier);
+    vscProbabilityPct = Math.min(100, vscProbabilityPct * formatParams.vscProbabilityMultiplier);
+    flags.push('qualifying_format_grid_chaos_placeholder');
   }
 
   const p = Math.min(0.999, Math.max(0, scProbabilityPct / 100));

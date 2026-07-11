@@ -14,6 +14,7 @@ const FLAG_LABELS: Record<string, string> = {
   pit_stationary_time_placeholder: 'Stationary pit time uses a generic placeholder',
   safety_car_probability_generic_placeholder: 'Safety-car probability uses a generic circuit-type default',
   vsc_probability_generic_placeholder: 'VSC probability uses a generic circuit-type default',
+  personal_pace_telemetry_applied: 'Personal pace offset from your recorded lap times (Settings) is applied to every candidate',
 };
 
 function describeFlag(flag: string): string {
@@ -21,6 +22,7 @@ function describeFlag(flag: string): string {
   if (flag.includes('pit_loss_source_confidence_')) return `Pit-loss figure confidence: ${flag.split('_').pop()}`;
   if (flag.includes('base_lap_time_source_confidence_')) return `Base laptime figure confidence: ${flag.split('_').pop()}`;
   if (flag.includes('safety_car_source_confidence_')) return `Safety-car figure confidence: ${flag.split('_').pop()}`;
+  if (flag.includes('personal_pace_confidence_')) return `Personal pace offset confidence: ${flag.split('_').pop()}`;
   return flag.replace(/_/g, ' ');
 }
 

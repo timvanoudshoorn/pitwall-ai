@@ -4,9 +4,11 @@ import { Panel } from '../components/ui/Panel';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { NoComparisonNotice } from '../components/ui/NoComparisonNotice';
 import { useStrategyComparison } from '../lib/useStrategyComparison';
+import { resolveTelemetryContext } from '../lib/raceSimAdapter';
 import { buildPrompt, buildTrackReferenceFacts } from '../ai';
 import type { AppSelection } from '../types/session';
 import type { ExplanationMode, StrategyCandidate, StrategyComparison } from '../ai/types';
+import type { TelemetryImportResult } from '../sim/telemetry';
 
 /**
  * Deterministic, template-built stand-in for ai's real generateExplanation()
@@ -18,10 +20,19 @@ import type { ExplanationMode, StrategyCandidate, StrategyComparison } from '../
  * though the *generation* isn't — clearly labeled as such in the UI rather
  * than presented as if it were a real model response.
  */
-function buildTemplateExplanation(mode: ExplanationMode, comparison: StrategyComparison): string {
+function buildTemplateExplanation(
+  mode: ExplanationMode,
+  comparison: StrategyComparison,
+  telemetry: TelemetryImportResult | null,
+): string {
   const { raceContext, strategies, recommendedStrategyId, marginAnalysis } = comparison;
   const recommended = strategies.find((s) => s.id === recommendedStrategyId) as StrategyCandidate;
   const stopWord = (s: StrategyCandidate) => `${s.numStops}-stop`;
+  // Applied identically to every candidate (see telemetryFacts.ts's hallucination-risk note this
+  // mirrors) — worth a caveat, but never framed as explaining why one strategy beats another.
+  const telemetryNote = telemetry
+    ? ` Times above already reflect your own recorded pace (${telemetry.personalPaceOffsetSec > 0 ? '+' : ''}${telemetry.personalPaceOffsetSec.toFixed(2)}s/lap vs the class/tier assumption, ${telemetry.confidence} confidence), applied equally to every candidate — it doesn't change which strategy wins.`
+    : '';
 
   if (mode === 'why_not_alternative') {
     const [idA, idB] = marginAnalysis.closestPairIds;
@@ -29,9 +40,9 @@ function buildTemplateExplanation(mode: ExplanationMode, comparison: StrategyCom
     const b = strategies.find((s) => s.id === idB) as StrategyCandidate;
     const [winner, loser] = a.deltaToBestSeconds <= b.deltaToBestSeconds ? [a, b] : [b, a];
     if (marginAnalysis.isCloseCall) {
-      return `"${winner.id}" and "${loser.id}" are separated by only ${marginAnalysis.deltaSeconds.toFixed(1)}s over ${raceContext.totalLaps} laps at ${raceContext.trackName} — inside this model's noise floor, so treat it as a genuine tradeoff rather than "${loser.id}" being wrong. "${winner.id}" pits at lap ${winner.pitStops[0]?.lap ?? '?'}; "${loser.id}" pits at lap ${loser.pitStops[0]?.lap ?? '?'}. With safety-car probability modeled at ${raceContext.safetyCarProbabilityPct}% this race, the earlier stop banks a cheaper caution-period pit if the SC comes out first; the later stop keeps fresher rubber for the run to the flag if it doesn't.`;
+      return `"${winner.id}" and "${loser.id}" are separated by only ${marginAnalysis.deltaSeconds.toFixed(1)}s over ${raceContext.totalLaps} laps at ${raceContext.trackName} — inside this model's noise floor, so treat it as a genuine tradeoff rather than "${loser.id}" being wrong. "${winner.id}" pits at lap ${winner.pitStops[0]?.lap ?? '?'}; "${loser.id}" pits at lap ${loser.pitStops[0]?.lap ?? '?'}. With safety-car probability modeled at ${raceContext.safetyCarProbabilityPct}% this race, the earlier stop banks a cheaper caution-period pit if the SC comes out first; the later stop keeps fresher rubber for the run to the flag if it doesn't.${telemetryNote}`;
     }
-    return `"${loser.id}" loses to "${winner.id}" by ${loser.deltaToBestSeconds.toFixed(1)}s over the full ${raceContext.totalLaps}-lap race distance at ${raceContext.trackName} — a clear enough margin that this isn't a coin-flip. ${winner.id} runs ${winner.numStops} stop(s) versus ${loser.id}'s ${loser.numStops}, and the predicted total race time gap (${winner.predictedTotalRaceTimeSeconds.toFixed(1)}s vs ${loser.predictedTotalRaceTimeSeconds.toFixed(1)}s) comes from that stop-count and tyre-life tradeoff, not from a single lap's pace.`;
+    return `"${loser.id}" loses to "${winner.id}" by ${loser.deltaToBestSeconds.toFixed(1)}s over the full ${raceContext.totalLaps}-lap race distance at ${raceContext.trackName} — a clear enough margin that this isn't a coin-flip. ${winner.id} runs ${winner.numStops} stop(s) versus ${loser.id}'s ${loser.numStops}, and the predicted total race time gap (${winner.predictedTotalRaceTimeSeconds.toFixed(1)}s vs ${loser.predictedTotalRaceTimeSeconds.toFixed(1)}s) comes from that stop-count and tyre-life tradeoff, not from a single lap's pace.${telemetryNote}`;
   }
 
   const marginNote = marginAnalysis.isCloseCall
@@ -40,7 +51,7 @@ function buildTemplateExplanation(mode: ExplanationMode, comparison: StrategyCom
 
   return `Box wall recommends the ${stopWord(recommended)}, pitting ${recommended.pitStops.map((p) => `lap ${p.lap}`).join(' and ')}, for a predicted total race time of ${(recommended.predictedTotalRaceTimeSeconds / 60).toFixed(1)} minutes over ${raceContext.totalLaps} laps at ${raceContext.trackName}.
 
-${marginNote} Safety-car probability is modeled at ${raceContext.safetyCarProbabilityPct}% this race and rain probability at ${raceContext.weather.rainProbabilityPct}% — both are whole-race likelihoods, not a forecast of which lap either arrives, so treat them as contingencies to react to rather than a fixed plan.`;
+${marginNote} Safety-car probability is modeled at ${raceContext.safetyCarProbabilityPct}% this race and rain probability at ${raceContext.weather.rainProbabilityPct}% — both are whole-race likelihoods, not a forecast of which lap either arrives, so treat them as contingencies to react to rather than a fixed plan.${telemetryNote}`;
 }
 
 export function AIExplanationScreen({ selection }: { selection: AppSelection }) {
@@ -52,10 +63,16 @@ export function AIExplanationScreen({ selection }: { selection: AppSelection }) 
   const built = useMemo(() => {
     if (!comparison) return null;
     const referenceFacts = selection.trackId ? buildTrackReferenceFacts(selection.trackId) : [];
-    const prompt = buildPrompt(mode, comparison, undefined, referenceFacts);
-    const text = buildTemplateExplanation(mode, comparison);
+    // Only pass telemetry through to the prompt/template if it was actually applied to THIS
+    // comparison (compareStrategies() flags that via assumptionsUsed) — resolveTelemetryContext()
+    // reflects the live Settings-screen state, which could theoretically be toggled off again
+    // between building the comparison and rendering here; checking the flag keeps the two in sync.
+    const telemetryApplied = comparison.assumptionsUsed.includes('personal_pace_telemetry_applied');
+    const telemetry = telemetryApplied ? resolveTelemetryContext(selection) : null;
+    const prompt = buildPrompt(mode, comparison, undefined, referenceFacts, telemetry ?? undefined);
+    const text = buildTemplateExplanation(mode, comparison, telemetry);
     return { prompt, text };
-  }, [comparison, mode, selection.trackId]);
+  }, [comparison, mode, selection]);
 
   if (!comparison || !built) {
     return (

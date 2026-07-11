@@ -227,3 +227,63 @@ decision on the AI Explanation backend call site.
   zero console errors and zero failed chunk requests — confirms the lazy
   imports resolve correctly under real HTTP chunk loading, not just in
   dev's on-demand transform pipeline. `npx tsc --noEmit` clean.
+
+## 2026-07-11 (later still) — Wired sim's telemetry-import (personal pace) into the UI
+
+- sim (76ce205) and ai (bba0cc6) had finished the telemetry-import
+  stretch feature end-to-end in the engine/explanation layers, but no
+  screen had a lap-time-entry input to actually call `importTelemetry()`
+  — unreachable from the UI. Coordinator flagged it; read
+  `src/sim/telemetry.ts` in full before building anything (input:
+  `lapTimesSec[]` + the user's already-selected class/tier/track
+  baseline; output: a median-filtered representative pace, a personal
+  pace offset in both seconds/lap and percent-off-ultimate-pace, and a
+  sample-size confidence tier — pace-only, deliberately not
+  tyre-wear/fuel personalization, per sim's own scope note).
+- Landed it on Settings (matches the coordinator's suggested placement —
+  a session-level opt-in preference, not a per-race parameter): new
+  "Personal Pace" panel, an Enabled/Disabled toggle button (same
+  pattern as `ModeTab`/compound-chip toggles elsewhere, not a native
+  checkbox, to stay visually consistent), and a textarea accepting
+  either plain-seconds (`91.234`) or mm:ss(`.sss`) (`1:31.234`) lap
+  times, one per line or comma-separated — both are realistic paste
+  formats for a lap-time log. Live preview below the textarea calls the
+  real `importTelemetry()` on every keystroke (via a new
+  `resolveTelemetryContext()` in `raceSimAdapter.ts`) and shows the
+  computed offset, kept/excluded lap counts, and a confidence badge
+  before the user commits to anything — same "never show a number
+  without its confidence" pattern as the rest of the app.
+- `types/session.ts`: added `AppSelection.personalPace: { enabled,
+  lapTimesSec }` — UI-local state, computed into a real
+  `TelemetryImportResult` on demand rather than stored pre-computed, so
+  it always reflects the current class/tier/track selection it's a
+  delta against (mirrors how the rest of `AppSelection` already works).
+- `raceSimAdapter.ts`: `buildStrategyComparison()` now resolves the
+  telemetry context and passes `personalPaceOffsetSec`/
+  `personalPaceConfidence` into `RaceSimInput` — when enabled, this
+  measurably shifts every candidate's predicted race time (verified:
+  Silverstone default 78.2min -> 82.0min with a synthetic +4.3s/lap
+  slower personal offset applied). `resolveTelemetryContext()` fails
+  quiet (returns `null`) rather than throwing on "not enough laps yet"
+  or "no track selected," since the Settings screen calls it on every
+  keystroke of a log still being typed.
+- `AIExplanationScreen`: passes the resolved `TelemetryImportResult`
+  into ai's `buildPrompt()` (which already had wiring for this from
+  bba0cc6 — `telemetryContext` param, PERSONAL PACE fact block,
+  grounding allow-list) and adds a matching sentence to the
+  non-live template explanation, guarded behind
+  `assumptionsUsed.includes('personal_pace_telemetry_applied')` so it
+  only appears when the offset actually affected this comparison.
+- `StrategyComparisonScreen`'s assumption-flag footer gets readable
+  labels for `personal_pace_telemetry_applied` and
+  `personal_pace_confidence_*` instead of falling back to the raw
+  flag-id-as-words rendering.
+- Verified via headless-Chromium against the dev server: pasted 7 lines
+  (6 valid lap times + 1 garbage line + 1 laptime far outside the
+  107%-of-fastest cutoff) into Settings, confirmed the preview correctly
+  parsed 6/filtered 1 outlier/flagged 1 unrecognized line, showed
+  +4.344s/lap medium-confidence; Compare screen's total race time and
+  assumption footer updated accordingly; Explanation screen's template
+  text and prompt preview both included the real PERSONAL PACE numbers.
+  Zero console errors. `npx tsc --noEmit` and `npm run build` both
+  clean, no new chunk-size regression (main chunk still 275KB).

@@ -21,6 +21,11 @@
  *    Monaco from Silverstone instead of every track sharing sim's flat 90s
  *    fallback. Falls through to that fallback (and its assumption flag)
  *    automatically for any track missing from the reference file.
+ *  - personalPaceOffsetSec / personalPaceConfidence -> resolveTelemetryContext()
+ *    below, which calls sim's real importTelemetry() (src/sim/telemetry.ts) off
+ *    the user's opt-in lap-time log (AppSelection.personalPace, entered on the
+ *    Settings screen) — undefined/omitted entirely when the user hasn't opted
+ *    in, same as before this field existed.
  * -----------------------------------------------------------------------
  */
 import {
@@ -28,8 +33,10 @@ import {
   pitStopLoss,
   safetyCarProbability,
   raceGapEvolution,
+  importTelemetry,
   type RaceSimInput,
   type GapEvolutionResult,
+  type TelemetryImportResult,
 } from '../sim';
 import type { CarClassKey, PerformanceTierKey } from '../sim/constants';
 import type { StrategyComparison } from '../ai/types';
@@ -173,9 +180,42 @@ function resolveRaceSimContext(selection: AppSelection): RaceSimContext {
   };
 }
 
+/**
+ * Resolves the user's optional personal-pace telemetry import (see
+ * `AppSelection.personalPace` / `src/sim/telemetry.ts`) into a real
+ * `TelemetryImportResult`, or `null` if the feature isn't opted in or
+ * there isn't enough of a lap-time log yet to compute a meaningful
+ * offset. `importTelemetry()` throws below its own minimum-sample floor
+ * (not exported as a constant, so caught rather than duplicated here) —
+ * treated as "not enough data yet," not a hard error, since the Settings
+ * screen calls this on every keystroke of a lap-time entry in progress.
+ */
+export function resolveTelemetryContext(selection: AppSelection): TelemetryImportResult | null {
+  if (!selection.personalPace.enabled || selection.personalPace.lapTimesSec.length === 0) return null;
+
+  let ctx: RaceSimContext;
+  try {
+    ctx = resolveRaceSimContext(selection);
+  } catch {
+    return null; // no class/track selected yet — nothing to recalibrate against
+  }
+
+  try {
+    return importTelemetry({
+      lapTimesSec: selection.personalPace.lapTimesSec,
+      carClass: ctx.carClassId,
+      performanceTier: ctx.performanceTier,
+      baseLapTimeSec: ctx.resolvedBaseLapTimeSec,
+    });
+  } catch {
+    return null; // fewer laps than importTelemetry's minimum sample floor
+  }
+}
+
 /** Builds a real StrategyComparison from the current app selection, or throws if selection is incomplete (caller should guard with a "pick a class/track first" state). */
 export function buildStrategyComparison(selection: AppSelection): StrategyComparison {
   const ctx = resolveRaceSimContext(selection);
+  const telemetry = resolveTelemetryContext(selection);
 
   const input: RaceSimInput = {
     trackId: ctx.trackEntry.id,
@@ -192,6 +232,8 @@ export function buildStrategyComparison(selection: AppSelection): StrategyCompar
     baseLapTimeSec: ctx.baseLapTimeSec,
     baseLapTimeSourceConfidence: ctx.baseLapTimeSourceConfidence,
     trackAbrasivenessRating: ctx.trackAbrasivenessRating,
+    personalPaceOffsetSec: telemetry?.personalPaceOffsetSec,
+    personalPaceConfidence: telemetry?.confidence,
     strategies: buildStrategyCandidates(ctx.totalLaps),
   };
 

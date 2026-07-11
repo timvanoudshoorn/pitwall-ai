@@ -46,9 +46,26 @@ export interface RaceParameters {
   rainProbabilityPct: number;
 }
 
+/**
+ * Personal-pace telemetry import (sim's `importTelemetry()`, see
+ * `src/sim/telemetry.ts`) — a raw lap-time log the user pastes in, kept
+ * as UI-local state here the same way the rest of AppSelection is, and
+ * turned into a `TelemetryImportResult` on demand by
+ * `src/lib/raceSimAdapter.ts` rather than stored pre-computed (so it
+ * always reflects the current class/tier/track selection it's a delta
+ * against). `enabled` is a separate flag from "has lap times" so a user
+ * can paste a log, see the preview, and still choose not to apply it to
+ * this session's strategy comparison.
+ */
+export interface PersonalPaceSettings {
+  enabled: boolean;
+  lapTimesSec: number[];
+}
+
 export interface AppSelection {
   carClassId: CarClassKey | null;
   performanceTier: PerformanceTierKey;
   trackId: string | null;
   raceParameters: RaceParameters;
+  personalPace: PersonalPaceSettings;
 }

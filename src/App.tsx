@@ -47,6 +47,10 @@ const INITIAL_SELECTION: AppSelection = {
     weather: 'dry',
     rainProbabilityPct: 15,
   },
+  personalPace: {
+    enabled: false,
+    lapTimesSec: [],
+  },
 };
 
 function App() {
@@ -68,7 +72,7 @@ function App() {
             <Route path="/pit-window" element={<PitWindowScreen selection={selection} />} />
             <Route path="/explanation" element={<AIExplanationScreen selection={selection} />} />
             <Route path="/battle" element={<StrategyBattleScreen selection={selection} />} />
-            <Route path="/settings" element={<SettingsScreen />} />
+            <Route path="/settings" element={<SettingsScreen selection={selection} onChange={patchSelection} />} />
           </Routes>
         </Suspense>
       </AppShell>

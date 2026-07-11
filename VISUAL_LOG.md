@@ -151,3 +151,46 @@ decision on the AI Explanation backend call site.
   parts (AI Explanation's text generation — no live API call site yet;
   Strategy Battle's lap-by-lap gap chart — no sim data shape yet). Ad hoc
   verification scripts/screenshots deleted after use each time, per usual.
+
+## 2026-07-11 (later) — Wired StrategyBattle's gap chart onto sim's raceGapEvolution()
+
+- Correction from the coordinator: sim had already built
+  `src/sim/raceGapEvolution.ts` (commit bf241c2) for exactly this — a
+  handoff that got lost in the shuffle rather than a genuinely missing
+  data shape. Re-read `src/sim/raceGapEvolution.ts` in full: it reuses
+  `perLapStrategyTrace()` (also newly exported from `strategyCompare.ts`)
+  so this chart can never silently drift from the headline
+  `predictedTotalRaceTimeSeconds` numbers shown on Comparison/Battle.
+- Refactored `src/lib/raceSimAdapter.ts`: extracted the track/pit-loss/
+  safety-car/base-laptime resolution that `buildStrategyComparison()` did
+  inline into a shared `resolveRaceSimContext()`, and added
+  `buildGapEvolution(selection, candidateAId, candidateBId)` on top of
+  it — both entry points now derive from the exact same per-selection
+  context so they can't quietly disagree. One wrinkle: `raceGapEvolution()`
+  requires a concrete `baseLapTimeSec` (unlike `RaceSimInput`, which
+  accepts `undefined` and defers to sim's own internal placeholder
+  default), so the context now carries both the real optional value
+  (`baseLapTimeSec`, passed through to `compareStrategies()` so its own
+  assumption-flag logic still fires correctly) and a resolved concrete
+  copy (`resolvedBaseLapTimeSec`, mirroring sim's private
+  `DEFAULT_BASE_LAP_TIME_SEC = 90` fallback since that constant isn't
+  exported) for `raceGapEvolution()` to consume.
+- New `src/components/charts/GapEvolutionChart.tsx` — single neutral-color
+  line (this is a signed quantity, not a categorical compound/status
+  encoding, so no palette assignment needed) against a zero reference
+  line, with each candidate's pit laps marked as dashed vertical ticks
+  (accent-colored for candidate A, muted for B) so the gap's inflection
+  points visibly line up with pit-stop events. Follows
+  `DegradationChart.tsx`'s existing Recharts styling conventions
+  (`.tabular` monospace ticks, no dual axis, custom tooltip).
+- `StrategyBattleScreen` now calls `buildGapEvolution()` for the same
+  `marginAnalysis.closestPairIds` pair already shown in the stint cards,
+  replacing the "pending" placeholder panel entirely.
+- Verified with a headless-Chromium pass: real Silverstone 2-stop vs
+  3-stop gap curve renders, visibly steps at each pit lap, ends near the
+  ~5.0s delta-of-deltas the stint cards already show (9.4s vs 14.4s).
+  Zero console errors. `npx tsc --noEmit` and `npm run build` both clean.
+- This closes the last functional gap flagged anywhere in CLAUDE.md's
+  "What's still open" list except the AI Explanation live-API call,
+  which remains correctly out of scope (infra decision, not visual's or
+  ai's to resolve unilaterally).

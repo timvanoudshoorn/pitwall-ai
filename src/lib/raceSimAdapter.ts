@@ -23,8 +23,15 @@
  *    automatically for any track missing from the reference file.
  * -----------------------------------------------------------------------
  */
-import { compareStrategies, pitStopLoss, safetyCarProbability, type RaceSimInput } from '../sim';
-import type { CarClassKey } from '../sim/constants';
+import {
+  compareStrategies,
+  pitStopLoss,
+  safetyCarProbability,
+  raceGapEvolution,
+  type RaceSimInput,
+  type GapEvolutionResult,
+} from '../sim';
+import type { CarClassKey, PerformanceTierKey } from '../sim/constants';
 import type { StrategyComparison } from '../ai/types';
 import type { AppSelection } from '../types/session';
 import { buildStrategyCandidates } from './strategyCandidates';
@@ -85,8 +92,40 @@ const TRACK_LAP_REFERENCE = trackLapReference.circuits as unknown as LapReferenc
 
 export class RaceSimAdapterError extends Error {}
 
-/** Builds a real StrategyComparison from the current app selection, or throws if selection is incomplete (caller should guard with a "pick a class/track first" state). */
-export function buildStrategyComparison(selection: AppSelection): StrategyComparison {
+/**
+ * Mirrors sim's own private DEFAULT_BASE_LAP_TIME_SEC in strategyCompare.ts
+ * (not exported from there). compareStrategies() can default this
+ * internally when `baseLapTimeSec` is omitted from RaceSimInput, but
+ * raceGapEvolution()'s GapEvolutionInput requires a concrete number — so
+ * the adapter needs its own copy of the same fallback to pass through
+ * explicitly. Keep in sync with strategyCompare.ts if that value changes.
+ */
+const FALLBACK_BASE_LAP_TIME_SEC = 90;
+
+interface RaceSimContext {
+  trackEntry: TrackCircuitEntry;
+  totalLaps: number;
+  carClassId: CarClassKey;
+  performanceTier: PerformanceTierKey;
+  weather: RaceSimInput['weather'];
+  safetyCarProbabilityPct: number;
+  pitLossSec: number;
+  /** Real per-track figure if data has one for this track; undefined otherwise (RaceSimInput's own optional field — let compareStrategies() apply its placeholder flag). */
+  baseLapTimeSec?: number;
+  baseLapTimeSourceConfidence?: 'confirmed' | 'reasonable_estimate' | 'placeholder';
+  /** Same value, resolved to sim's fallback constant when real data is missing — for consumers (raceGapEvolution) that require a concrete number rather than an optional one. */
+  resolvedBaseLapTimeSec: number;
+  trackAbrasivenessRating?: 1 | 2 | 3 | 4 | 5;
+}
+
+/**
+ * Resolves the shared per-selection context (track lookup, pit loss,
+ * safety-car probability, base laptime, abrasiveness) that both
+ * `buildStrategyComparison()` and `buildGapEvolution()` need — kept in one
+ * place so the two can never compute these inputs differently and quietly
+ * disagree with each other.
+ */
+function resolveRaceSimContext(selection: AppSelection): RaceSimContext {
   const { carClassId, performanceTier, trackId, raceParameters } = selection;
   if (!carClassId || !trackId) {
     throw new RaceSimAdapterError('Select a car class and track before running a strategy comparison.');
@@ -119,25 +158,80 @@ export function buildStrategyComparison(selection: AppSelection): StrategyCompar
   const abrasiveness = TRACK_ABRASIVENESS[trackId]?.abrasivenessRating ?? undefined;
   const lapReference = TRACK_LAP_REFERENCE.find((c) => c.id === trackId)?.referenceLapTimeSec;
 
-  const input: RaceSimInput = {
-    trackId,
-    trackName: trackEntry.name,
+  return {
+    trackEntry,
     totalLaps,
-    carClass: carClassId,
+    carClassId,
     performanceTier,
-    weather: {
-      condition: raceParameters.weather,
-      rainProbabilityPct: raceParameters.rainProbabilityPct,
-    },
+    weather: { condition: raceParameters.weather, rainProbabilityPct: raceParameters.rainProbabilityPct },
     safetyCarProbabilityPct: sc.scProbabilityPct,
     pitLossSec: pit.totalPitLossSec,
     baseLapTimeSec: lapReference?.value,
     baseLapTimeSourceConfidence: lapReference?.confidence,
+    resolvedBaseLapTimeSec: lapReference?.value ?? FALLBACK_BASE_LAP_TIME_SEC,
     trackAbrasivenessRating: abrasiveness,
-    strategies: buildStrategyCandidates(totalLaps),
+  };
+}
+
+/** Builds a real StrategyComparison from the current app selection, or throws if selection is incomplete (caller should guard with a "pick a class/track first" state). */
+export function buildStrategyComparison(selection: AppSelection): StrategyComparison {
+  const ctx = resolveRaceSimContext(selection);
+
+  const input: RaceSimInput = {
+    trackId: ctx.trackEntry.id,
+    trackName: ctx.trackEntry.name,
+    totalLaps: ctx.totalLaps,
+    carClass: ctx.carClassId,
+    performanceTier: ctx.performanceTier,
+    weather: ctx.weather,
+    safetyCarProbabilityPct: ctx.safetyCarProbabilityPct,
+    pitLossSec: ctx.pitLossSec,
+    // The optional (possibly undefined) field, not resolvedBaseLapTimeSec — so
+    // compareStrategies() applies its own 'base_lap_time_generic_placeholder'
+    // assumption flag when data has no real figure for this track.
+    baseLapTimeSec: ctx.baseLapTimeSec,
+    baseLapTimeSourceConfidence: ctx.baseLapTimeSourceConfidence,
+    trackAbrasivenessRating: ctx.trackAbrasivenessRating,
+    strategies: buildStrategyCandidates(ctx.totalLaps),
   };
 
   return compareStrategies(input);
+}
+
+/**
+ * Builds a real lap-by-lap gap-evolution series between two candidate
+ * strategies (by id, as they appear in `buildStrategyComparison()`'s
+ * output) via sim's `raceGapEvolution()` — same underlying per-lap trace
+ * `compareStrategies()` uses, so this chart can't drift from the headline
+ * numbers shown elsewhere. Throws if either id isn't one of the standard
+ * candidates for this selection's race distance (shouldn't happen if the
+ * ids came from a `buildStrategyComparison()` call for the same selection).
+ */
+export function buildGapEvolution(
+  selection: AppSelection,
+  candidateAId: string,
+  candidateBId: string,
+): GapEvolutionResult {
+  const ctx = resolveRaceSimContext(selection);
+  const candidates = buildStrategyCandidates(ctx.totalLaps);
+  const candidateA = candidates.find((c) => c.id === candidateAId);
+  const candidateB = candidates.find((c) => c.id === candidateBId);
+  if (!candidateA || !candidateB) {
+    throw new RaceSimAdapterError(`Could not find strategy candidates "${candidateAId}"/"${candidateBId}" for this race distance.`);
+  }
+
+  return raceGapEvolution({
+    totalLaps: ctx.totalLaps,
+    baseLapTimeSec: ctx.resolvedBaseLapTimeSec,
+    pitLossSec: ctx.pitLossSec,
+    candidateA,
+    candidateB,
+    degOptions: {
+      carClass: ctx.carClassId,
+      performanceTier: ctx.performanceTier,
+      trackAbrasivenessRating: ctx.trackAbrasivenessRating,
+    },
+  });
 }
 
 export { CAR_CLASS_TO_DATA_ID };

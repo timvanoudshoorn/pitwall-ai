@@ -287,3 +287,43 @@ decision on the AI Explanation backend call site.
   text and prompt preview both included the real PERSONAL PACE numbers.
   Zero console errors. `npx tsc --noEmit` and `npm run build` both
   clean, no new chunk-size regression (main chunk still 275KB).
+
+## 2026-07-11 (later still) — Retired the lapsAndCorners mock; wired qualifying format into safety car
+
+Two small teammate-flagged fixes landed together:
+
+- **data's find**: `src/mocks/lapsAndCorners.ts` (visual's own hand-written
+  supplement, predating `data/track-lap-reference.json`) was silently
+  dropping Shanghai and Madring from Track Select entirely (via
+  `dataAdapters.ts`'s `.filter((c) => TRACK_LAPS_CORNERS[c.id])`), and had
+  a stale Barcelona corner count (16, pre-2023 layout — F1's run a
+  14-corner final sector since the 2023 Spanish GP). data closed the one
+  gap that was blocking a full swap by adding a `corners` field to
+  `track-lap-reference.json` for all 25 circuits (commit 8a54958,
+  Shanghai/Barcelona independently source-verified). New
+  `src/lib/trackLapReference.ts` is now the single parse point for that
+  file, shared by `dataAdapters.ts` (Track Select's `TrackMeta`) and
+  `raceSimAdapter.ts` (sim's `totalLaps`/`baseLapTimeSec`) — previously
+  each had its own separate lookup (one via the mock, one via a raw JSON
+  import in raceSimAdapter.ts) that could in principle disagree; now
+  there's one. `src/mocks/lapsAndCorners.ts` deleted outright, per
+  CLAUDE.md's "swap for src/data's real reference files wholesale"
+  framing — nothing else referenced it. Verified via headless-Chromium:
+  Shanghai and Madring both now appear on Track Select; all 8 routes
+  still navigate clean.
+- **sim's find**: `raceParameters.qualifyingFormat` (One-Shot/Short/Full
+  Qualifying, a Race Parameters screen control since the first scaffold)
+  had zero effect on any calculation — `resolveRaceSimContext()` never
+  read it. sim built the real model (`safetyCarProbability()`'s new
+  optional `qualifyingFormat` param, commit 43517e0, SIMLOG.md #12) and
+  asked for a one-line wire-up: passed
+  `qualifyingFormat: raceParameters.qualifyingFormat` into the existing
+  `safetyCarProbability()` call in `resolveRaceSimContext()`. Also took
+  sim's optional suggestion to make `session.ts`'s `QualifyingFormat` a
+  re-export of sim's `QualifyingFormatKey` (same pattern already used for
+  `CarClassKey`/`PerformanceTierKey`) rather than a coincidentally-matching
+  parallel literal union.
+- `npx tsc --noEmit` and `npm run build` both clean; no chunk-size
+  regression (main chunk 302KB — grew slightly since the landing screen
+  now shares the real, larger `track-lap-reference.json` instead of the
+  tiny hand-written mock, still well under the 500KB warning threshold).

@@ -4,9 +4,10 @@
  * Maps the data teammate's real reference files (repo-root `data/*.json`)
  * onto visual's display types (CarClassMeta / TrackMeta). This replaces
  * the hand-written placeholders that used to live in src/mocks/ now that
- * data has published real, cited research — src/mocks/ is kept only for
- * fields data's files don't cover yet (lap counts, corner counts for the
- * schematic — data's files focus on pit-loss/SC/LiDAR, not lap distance).
+ * data has published real, cited research — including lap/corner counts,
+ * via src/lib/trackLapReference.ts (data/track-lap-reference.json), as of
+ * 2026-07-11; src/mocks/lapsAndCorners.ts is retired (see that module's
+ * former header, and trackLapReference.ts's, for why).
  *
  * Id mapping note: data's json uses 'f1_2026' / 'f1_world_car' as ids;
  * sim's CarClassKey (src/sim/constants.ts) uses 'f1_2026_season_pack' /
@@ -18,7 +19,7 @@ import carClassesData from '../../data/car-classes.json';
 import tracksData from '../../data/tracks.json';
 import type { CarClassMeta, TrackMeta } from '../types/session';
 import type { CarClassKey } from '../sim/constants';
-import { TRACK_LAPS_CORNERS } from '../mocks/lapsAndCorners';
+import { getTrackLapReference } from './trackLapReference';
 
 const DATA_ID_TO_CAR_CLASS_KEY: Record<string, CarClassKey> = {
   f1_2025: 'f1_2025',
@@ -72,18 +73,18 @@ function normalizeCircuitType(raw: string): TrackMeta['circuitType'] {
   return 'permanent';
 }
 
-/** 2025 calendar only, and only circuits with a lap/corner figure on hand (see mocks/lapsAndCorners.ts). */
+/** 2025 calendar plus 2026 additions (e.g. Madring), covering every circuit with a lap/corner figure in data/track-lap-reference.json — as of 2026-07-11 that's all 25 tracks.json entries, so this no longer silently drops any (Shanghai and Madring used to vanish here via the old mock's missing entries). */
 export const TRACKS: TrackMeta[] = tracksData.circuits
-  .filter((c) => TRACK_LAPS_CORNERS[c.id])
+  .filter((c) => getTrackLapReference(c.id))
   .map((c) => {
-    const supplement = TRACK_LAPS_CORNERS[c.id];
+    const lapRef = getTrackLapReference(c.id)!;
     return {
       id: c.id,
       name: c.name,
       country: c.location.split(',').pop()?.trim() ?? c.location,
-      lengthKm: supplement.lengthKm,
-      laps: supplement.laps,
-      corners: supplement.corners,
+      lengthKm: lapRef.circuitLengthKm,
+      laps: lapRef.raceLaps.value,
+      corners: lapRef.corners.value,
       lidarScanned: c.lidarScanned,
       circuitType: normalizeCircuitType(c.circuitType),
       reverseLayoutAvailable: c.reverseLayoutAvailable,

@@ -12,10 +12,20 @@
  * teammate publishes src/data/ — swap the import there when it lands.
  * -----------------------------------------------------------------------
  */
-import type { CarClassKey, PerformanceTierKey } from '../sim/constants';
+import type { CarClassKey, PerformanceTierKey, QualifyingFormatKey } from '../sim/constants';
 import type { WeatherCondition } from '../ai/types';
 
 export type { CarClassKey, PerformanceTierKey };
+
+/**
+ * Re-exports sim's QualifyingFormatKey rather than a parallel literal
+ * union — same pattern as CarClassKey/PerformanceTierKey above. Was a
+ * standalone type here until sim wired qualifying format into
+ * safetyCarProbability() (SIMLOG.md #12, 2026-07-11); the literal values
+ * were already identical, this just makes that guaranteed rather than
+ * coincidental.
+ */
+export type QualifyingFormat = QualifyingFormatKey;
 
 export interface TrackMeta {
   id: string;
@@ -36,8 +46,6 @@ export interface CarClassMeta {
   description: string;
   tierSliderApplies: boolean;
 }
-
-export type QualifyingFormat = 'one_shot' | 'short_qualifying' | 'full_qualifying';
 
 export interface RaceParameters {
   raceLengthPct: 25 | 50 | 75 | 100;

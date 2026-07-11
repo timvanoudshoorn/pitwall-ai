@@ -44,8 +44,7 @@ import type { AppSelection } from '../types/session';
 import { buildStrategyCandidates } from './strategyCandidates';
 import tracksData from '../../data/tracks.json';
 import trackTyreData from '../../data/track-tyre-characteristics.json';
-import trackLapReference from '../../data/track-lap-reference.json';
-import { TRACK_LAPS_CORNERS } from '../mocks/lapsAndCorners';
+import { getTrackLapReference } from './trackLapReference';
 
 /** data's json uses different ids than sim's CarClassKey (src/lib/dataAdapters.ts already reconciles the display-metadata side of this same mismatch). */
 const CAR_CLASS_TO_DATA_ID: Record<CarClassKey, string> = {
@@ -90,12 +89,6 @@ const TRACK_ABRASIVENESS = trackTyreData.tracks as unknown as Record<
   string,
   { abrasivenessRating: 1 | 2 | 3 | 4 | 5 | null }
 >;
-
-interface LapReferenceEntry {
-  id: string;
-  referenceLapTimeSec: { value: number; confidence: 'confirmed' | 'reasonable_estimate' | 'placeholder' };
-}
-const TRACK_LAP_REFERENCE = trackLapReference.circuits as unknown as LapReferenceEntry[];
 
 export class RaceSimAdapterError extends Error {}
 
@@ -143,8 +136,8 @@ function resolveRaceSimContext(selection: AppSelection): RaceSimContext {
     throw new RaceSimAdapterError(`No track reference data found for "${trackId}".`);
   }
 
-  const lapsMeta = TRACK_LAPS_CORNERS[trackId];
-  const fullDistanceLaps = lapsMeta?.laps ?? 55; // generic fallback, matches lapsAndCorners.ts's own scope note
+  const lapRef = getTrackLapReference(trackId);
+  const fullDistanceLaps = lapRef?.raceLaps.value ?? 55; // generic fallback for a track missing from the reference file entirely
   const totalLaps = Math.max(
     5,
     Math.round((fullDistanceLaps * raceParameters.raceLengthPct) / 100),
@@ -160,10 +153,11 @@ function resolveRaceSimContext(selection: AppSelection): RaceSimContext {
     totalLaps,
     scProbabilityPctOverride: SAFETY_CAR_TIER_TO_PCT[trackEntry.safetyCarHistory.tier],
     sourceConfidence: trackEntry.safetyCarHistory.confidence,
+    qualifyingFormat: raceParameters.qualifyingFormat,
   });
 
   const abrasiveness = TRACK_ABRASIVENESS[trackId]?.abrasivenessRating ?? undefined;
-  const lapReference = TRACK_LAP_REFERENCE.find((c) => c.id === trackId)?.referenceLapTimeSec;
+  const referenceLapTime = lapRef?.referenceLapTimeSec;
 
   return {
     trackEntry,
@@ -173,9 +167,9 @@ function resolveRaceSimContext(selection: AppSelection): RaceSimContext {
     weather: { condition: raceParameters.weather, rainProbabilityPct: raceParameters.rainProbabilityPct },
     safetyCarProbabilityPct: sc.scProbabilityPct,
     pitLossSec: pit.totalPitLossSec,
-    baseLapTimeSec: lapReference?.value,
-    baseLapTimeSourceConfidence: lapReference?.confidence,
-    resolvedBaseLapTimeSec: lapReference?.value ?? FALLBACK_BASE_LAP_TIME_SEC,
+    baseLapTimeSec: referenceLapTime?.value,
+    baseLapTimeSourceConfidence: referenceLapTime?.confidence,
+    resolvedBaseLapTimeSec: referenceLapTime?.value ?? FALLBACK_BASE_LAP_TIME_SEC,
     trackAbrasivenessRating: abrasiveness,
   };
 }

@@ -46,10 +46,22 @@ Resuming QA after several commits since predecessor's last check, particularly:
 - Madring's "unknown" tier properly skipped (no race run yet)
 - All confidence levels properly tagged on generated facts
 
-**BLOCKED WAITING:**
-- **visual:** Wiring StrategyComparisonScreen and AIExplanationScreen to real sim/ai output (in progress)
+**VISUAL WIRING VERIFIED (commit 111f410):** ✓ COMPLETE
+- StrategyComparisonScreen: fully live, calls sim's real compareStrategies() via raceSimAdapter.ts
+  - Correctly builds RaceSimInput from AppSelection + all data reference files
+  - Handles edge cases (missing lap reference data → fallback to 90s placeholder)
+  - All assumptionsUsed flags surface in UI footer
+- AIExplanationScreen: template-correct (not live Claude API, intentional)
+  - Runs real buildPrompt()/buildTrackReferenceFacts() on real StrategyComparison
+  - Rendered text is deterministic template built from real numbers
+  - Visible "not a live Claude call" banner present
+  - Prompt preview panel shows real prompts
+- strategyCandidates.ts: 1/2/3-stop strategies with laps split proportional to tyre nominalLife
+- raceSimAdapter.ts verified: all data flows correctly (pit loss, abrasiveness, lap reference, safety car)
+- All confidence levels flow correctly (Monaco confirmed → no flag, others → flagged)
+- tsc: clean (no type errors)
 
-Once visual completes, full integration testing suite (QA_TEST_PLAN.md) will run.
+**READY FOR LIVE INTEGRATION TEST:** Full QA_TEST_PLAN.md suite to run on actual working screens.
 
 **Verified Complete (pre-wiring):**
 - tsc and oxlint: clean (no errors)

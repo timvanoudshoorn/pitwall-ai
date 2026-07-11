@@ -11,33 +11,872 @@
     "fullThrottlePctMethod": "Percentage of the lap spent at full throttle -- a real, commonly-published F1 technical-preview stat (Mercedes/Pirelli circuit guides). Anchored to several confirmed public figures (Monza >80%, Jeddah 79%, Silverstone 70%, Suzuka ~66%, Hungaroring ~53-61%, Singapore 49%, with Monaco and Mexico City reported lower still) and interpolated for the remaining circuits using the same circuit-characteristic reasoning as track-tyre-characteristics.json's abrasivenessRating (straight length/count, chicane density, street vs permanent). All values reasonable_estimate except where a source figure is cited directly in a circuit's basis string.",
     "fuelPerLapKgMethod": "No single published per-circuit fuel-consumption table exists (same gap noted for pit-loss/SC data in tracks.json). Computed via an explicit, documented formula rather than invented per-circuit: fuelPerLapKg = 0.30 * circuitLengthKm + 0.15 + (fullThrottlePct - 60) / 100 * 0.4 -- i.e. a lap-length-scaled base (longer lap burns more fuel) plus a throttle-intensity adjustment (higher full-throttle % burns more fuel per km than a low-speed technical lap). This is an invented-but-transparent methodology, calibrated only to land in the commonly-cited real-F1 range of ~1.0-2.3kg/lap (Monaco lowest, Spa/Las Vegas/Jeddah highest) -- explicitly a reasonable_estimate for every circuit, not measured data. Sim's fuel.ts can multiply by raceLaps to get a track-specific startFuelKg instead of the flat 110kg placeholder.",
     "overtakingDifficultyMethod": "Qualitative low/medium/high/very_high tier + basis string, added per ai teammate's request (2026-07-10) for a sourceable ReferenceFact to replace their hand-written Monaco placeholder text in why-not-alternative explanations. Reasonable_estimate, drawn from well-documented circuit reputation (DRS zone count/placement, straight length, corner width) rather than a single cited statistic -- same confidence tier as the abrasiveness ratings.",
-    "lastReviewed": "2026-07-10"
+    "lastReviewed": "2026-07-11",
+    "cornersMethod": "corners = official/widely-published turn count per circuit (F1.com/Wikipedia circuit guides), added 2026-07-11 to let this file fully supersede src/mocks/lapsAndCorners.ts (which was missing shanghai and madring entirely, and still had barcelona at its pre-2023 16-corner count -- corrected to 14 here after independent verification). Only shanghai, barcelona, and madring were independently re-verified this pass (confirmed); the remaining 22 are reasonable_estimate widely-published figures carried over from general knowledge, consistent with (and cross-checked against) the values visual had already been using via lapsAndCorners.ts."
   },
   "circuits": [
-    {"id": "albert_park", "raceDistanceKm": 306.124, "raceLaps": {"value": 58, "confidence": "reasonable_estimate"}, "circuitLengthKm": 5.278, "referenceLapTimeSec": {"value": 79.813, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:19.813 (Leclerc, 2024, current post-2022 reprofiled layout)."}, "fullThrottlePct": {"value": 75, "confidence": "reasonable_estimate", "basis": "2022+ layout removed several chicanes in favour of flowing corners, raising full-throttle time markedly vs the old street-adjacent layout."}, "fuelPerLapKg": {"value": 1.79, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium", "confidence": "reasonable_estimate", "basis": "Wide, modern layout with multiple DRS zones post-reprofile; better overtaking than its old chicane-heavy reputation."}},
-    {"id": "shanghai", "raceDistanceKm": 305.066, "raceLaps": {"value": 56, "confidence": "reasonable_estimate"}, "circuitLengthKm": 5.449, "referenceLapTimeSec": {"value": 92.238, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:32.238 (Schumacher, 2004)."}, "fullThrottlePct": {"value": 58, "confidence": "reasonable_estimate", "basis": "Long back straight offset by a tight, twisty infield section (Turns 1-3 spiral, Turn 14 hairpin)."}, "fuelPerLapKg": {"value": 1.78, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium", "confidence": "reasonable_estimate", "basis": "Long back straight into a hairpin is a reliable overtaking spot; rest of lap is tighter and harder to pass on."}},
-    {"id": "suzuka", "raceDistanceKm": 307.471, "raceLaps": {"value": 53, "confidence": "reasonable_estimate"}, "circuitLengthKm": 5.802, "referenceLapTimeSec": {"value": 90.965, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:30.965 (Antonelli, 2025)."}, "fullThrottlePct": {"value": 66, "confidence": "reasonable_estimate", "basis": "Publicly reported ~66% full throttle (high-speed Esses/130R offset by the tight chicane/hairpin)."}, "fuelPerLapKg": {"value": 1.92, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "high", "confidence": "reasonable_estimate", "basis": "Narrow, high-speed, historically one of the hardest calendar circuits to pass on outside the final chicane/main straight."}},
-    {"id": "bahrain", "raceDistanceKm": 308.238, "raceLaps": {"value": 57, "confidence": "reasonable_estimate"}, "circuitLengthKm": 5.408, "referenceLapTimeSec": {"value": 91.447, "confidence": "confirmed", "basis": "F1 GP lap record, 1:31.447 (Pedro de la Rosa, McLaren MP4-20, 2005 Bahrain GP) -- independently verified via Wikipedia 2026-07-10.", "source": "https://en.wikipedia.org/wiki/Bahrain_International_Circuit"}, "fullThrottlePct": {"value": 70, "confidence": "reasonable_estimate", "basis": "Long start/finish straight and back straight, generous run-off desert layout."}, "fuelPerLapKg": {"value": 1.81, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium", "confidence": "reasonable_estimate", "basis": "Multiple wide, heavy-braking zones off the two long straights; designed with overtaking in mind."}},
-    {"id": "jeddah", "raceDistanceKm": 308.45, "raceLaps": {"value": 50, "confidence": "reasonable_estimate"}, "circuitLengthKm": 6.169, "referenceLapTimeSec": {"value": 90.734, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:30.734 (Verstappen-era pace, 2021-2025 range)."}, "fullThrottlePct": {"value": 79, "confidence": "confirmed", "basis": "Publicly reported ~79% full throttle, ~155mph+ average speed -- one of the highest-speed circuits on the calendar.", "source": "https://www.the-race.com/formula-1/79-full-throttle-155mph-average-what-we-expect-from-jeddah/"}, "fuelPerLapKg": {"value": 2.08, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium_high", "confidence": "reasonable_estimate", "basis": "Very high average speed makes overtaking committal and wall-proximity risky despite reasonable straight-line opportunities."}},
-    {"id": "miami", "raceDistanceKm": 308.326, "raceLaps": {"value": 57, "confidence": "reasonable_estimate"}, "circuitLengthKm": 5.409, "referenceLapTimeSec": {"value": 89.708, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:29.708 (Verstappen, 2023)."}, "fullThrottlePct": {"value": 60, "confidence": "reasonable_estimate", "basis": "Mixed layout: long back straight (Turns 16-17 run) offset by a tight stadium chicane section (Turns 14-17)."}, "fuelPerLapKg": {"value": 1.77, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium", "confidence": "reasonable_estimate", "basis": "Long straight into Turn 11 hairpin is a reliable DRS pass; stadium section is tight and pass-resistant."}},
-    {"id": "imola", "raceDistanceKm": 309.049, "raceLaps": {"value": 63, "confidence": "reasonable_estimate"}, "circuitLengthKm": 4.906, "referenceLapTimeSec": {"value": 75.484, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:15.484 (Hamilton, 2020)."}, "fullThrottlePct": {"value": 72, "confidence": "reasonable_estimate", "basis": "Fast, flowing old-school layout (Tamburello/Villeneuve straights) with few slow corners."}, "fuelPerLapKg": {"value": 1.67, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "high", "confidence": "reasonable_estimate", "basis": "Narrow, wall-lined circuit with very few genuine overtaking spots (Tamburello/Variante Alta straights are the main chances)."}},
-    {"id": "monaco", "raceDistanceKm": 260.286, "raceLaps": {"value": 78, "confidence": "reasonable_estimate"}, "circuitLengthKm": 3.337, "referenceLapTimeSec": {"value": 72.909, "confidence": "confirmed", "basis": "F1 GP lap record, 1:12.909 (Lewis Hamilton, Mercedes W12, 2021 Monaco GP, current post-2015 layout) -- independently verified via Wikipedia 2026-07-10.", "source": "https://en.wikipedia.org/wiki/Circuit_de_Monaco"}, "fullThrottlePct": {"value": 40, "confidence": "reasonable_estimate", "basis": "Lowest full-throttle circuit on the calendar -- reported lower than Hungaroring's ~53%, tightest street layout with no genuine straight."}, "fuelPerLapKg": {"value": 1.07, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "very_high", "confidence": "confirmed", "basis": "Definitionally the calendar's hardest circuit to overtake on -- track width barely exceeds car width in most sections; near-universally cited in F1 broadcast/technical coverage."}},
-    {"id": "barcelona", "raceDistanceKm": 307.236, "raceLaps": {"value": 66, "confidence": "reasonable_estimate"}, "circuitLengthKm": 4.655, "referenceLapTimeSec": {"value": 76.330, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:16.330 (Verstappen, 2023)."}, "fullThrottlePct": {"value": 65, "confidence": "reasonable_estimate", "basis": "Mix of high-speed sweepers (old Turns 3, 9) and a tighter, DRS-straight-added final sector."}, "fuelPerLapKg": {"value": 1.57, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium_high", "confidence": "reasonable_estimate", "basis": "Widely regarded as overtaking-difficult despite DRS zones -- high-speed, aero-sensitive corners punish following closely."}, "notes": "Replaced on the 2026 calendar by Madring; retained for 2025-relevant F1 25 base-game modeling."},
-    {"id": "montreal", "raceDistanceKm": 305.27, "raceLaps": {"value": 70, "confidence": "reasonable_estimate"}, "circuitLengthKm": 4.361, "referenceLapTimeSec": {"value": 73.078, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:13.078 (Bottas, 2019)."}, "fullThrottlePct": {"value": 72, "confidence": "reasonable_estimate", "basis": "Stop-start layout of long straights into heavy-braking chicanes."}, "fuelPerLapKg": {"value": 1.51, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "low_medium", "confidence": "reasonable_estimate", "basis": "Multiple long straights and heavy braking zones (Turn 1, hairpin) make it one of the calendar's better overtaking circuits."}},
-    {"id": "red_bull_ring", "raceDistanceKm": 306.452, "raceLaps": {"value": 71, "confidence": "reasonable_estimate"}, "circuitLengthKm": 4.318, "referenceLapTimeSec": {"value": 65.619, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:05.619 (Sainz, 2020)."}, "fullThrottlePct": {"value": 68, "confidence": "reasonable_estimate", "basis": "Short lap dominated by three long uphill/downhill straights."}, "fuelPerLapKg": {"value": 1.48, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "low", "confidence": "reasonable_estimate", "basis": "Short lap with three genuine straight-into-heavy-braking overtaking zones; consistently produces high overtaking counts."}},
-    {"id": "silverstone", "raceDistanceKm": 306.198, "raceLaps": {"value": 52, "confidence": "reasonable_estimate"}, "circuitLengthKm": 5.891, "referenceLapTimeSec": {"value": 87.097, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:27.097 (Verstappen, 2020)."}, "fullThrottlePct": {"value": 70, "confidence": "confirmed", "basis": "Publicly reported ~70% full throttle (Maggotts-Becketts-Chapel high-speed sequence dominates the lap).", "source": "https://www.motorsport.com/f1/news/high-downforce-power-tracks-f1-differences-explained/6130973/"}, "fuelPerLapKg": {"value": 1.96, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "low_medium", "confidence": "reasonable_estimate", "basis": "Wide, fast, flowing layout with several straight-into-braking-zone passing spots (Brooklands, Stowe, Hangar Straight into Village)."}},
-    {"id": "spa", "raceDistanceKm": 308.052, "raceLaps": {"value": 44, "confidence": "reasonable_estimate"}, "circuitLengthKm": 7.001, "referenceLapTimeSec": {"value": 106.286, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:46.286 (Bottas, 2018)."}, "fullThrottlePct": {"value": 73, "confidence": "reasonable_estimate", "basis": "Longest circuit on the calendar, dominated by the Kemmel Straight and other high-speed sections."}, "fuelPerLapKg": {"value": 2.30, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod -- highest fuel-per-lap on the calendar given its length."}, "overtakingDifficulty": {"tier": "low", "confidence": "reasonable_estimate", "basis": "Eau Rouge/Raidillon into the Kemmel Straight is one of F1's most famous overtaking zones; consistently high-overtaking circuit."}},
-    {"id": "hungaroring", "raceDistanceKm": 306.63, "raceLaps": {"value": 70, "confidence": "reasonable_estimate"}, "circuitLengthKm": 4.381, "referenceLapTimeSec": {"value": 76.627, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:16.627 (Hamilton, 2020)."}, "fullThrottlePct": {"value": 58, "confidence": "confirmed", "basis": "Publicly reported 53% of lap time / 61% of lap distance at full throttle; used as a blended ~58% for this field's single-number convention.", "source": "web search of Mercedes-AMG F1 circuit-guide style coverage"}, "fuelPerLapKg": {"value": 1.46, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "high", "confidence": "reasonable_estimate", "basis": "Tight, twisty, low-average-speed 'Monaco without the walls' -- historically one of the calendar's hardest circuits to pass on."}},
-    {"id": "zandvoort", "raceDistanceKm": 306.587, "raceLaps": {"value": 72, "confidence": "reasonable_estimate"}, "circuitLengthKm": 4.259, "referenceLapTimeSec": {"value": 71.097, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:11.097 (Hamilton, 2021)."}, "fullThrottlePct": {"value": 55, "confidence": "reasonable_estimate", "basis": "Narrow dunes circuit with banked corners but limited pure straight length."}, "fuelPerLapKg": {"value": 1.41, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "high", "confidence": "reasonable_estimate", "basis": "Narrow, banked, limited run-off; consistently rated one of the harder modern-calendar circuits to pass on."}},
-    {"id": "monza", "raceDistanceKm": 306.72, "raceLaps": {"value": 53, "confidence": "reasonable_estimate"}, "circuitLengthKm": 5.789, "referenceLapTimeSec": {"value": 80.901, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, 1:20.901 (Norris, 2025, breaking Barrichello's long-standing 2004 record of 1:21.046)."}, "fullThrottlePct": {"value": 82, "confidence": "confirmed", "basis": "Publicly reported >80% full throttle -- the 'Temple of Speed,' highest full-throttle circuit on the calendar.", "source": "web search of F1 technical-preview coverage"}, "fuelPerLapKg": {"value": 1.98, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "low", "confidence": "reasonable_estimate", "basis": "Lowest-downforce, highest-speed layout on the calendar with three chicane-into-braking-zone passing spots; historically high overtaking counts."}},
-    {"id": "baku", "raceDistanceKm": 306.049, "raceLaps": {"value": 51, "confidence": "reasonable_estimate"}, "circuitLengthKm": 6.001, "referenceLapTimeSec": {"value": 103.009, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:43.009 (Leclerc, 2019)."}, "fullThrottlePct": {"value": 65, "confidence": "reasonable_estimate", "basis": "One of the longest straights on the calendar (2.2km) offset by a very tight, low-speed castle-section old-town sector."}, "fuelPerLapKg": {"value": 1.97, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium", "confidence": "reasonable_estimate", "basis": "The long straight is a reliable DRS pass; the castle section is single-file and pass-resistant."}},
-    {"id": "singapore", "raceDistanceKm": 306.143, "raceLaps": {"value": 62, "confidence": "reasonable_estimate"}, "circuitLengthKm": 4.940, "referenceLapTimeSec": {"value": 101.905, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:41.905 (post-2023 layout-shortening era)."}, "fullThrottlePct": {"value": 49, "confidence": "confirmed", "basis": "Publicly reported ~49% full throttle -- one of the lowest on the calendar.", "source": "web search of F1 technical-preview coverage"}, "fuelPerLapKg": {"value": 1.59, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "very_high", "confidence": "reasonable_estimate", "basis": "Narrow, walled street circuit with very few genuine passing zones; historically one of the calendar's hardest-to-pass venues alongside Monaco."}},
-    {"id": "cota", "raceDistanceKm": 308.405, "raceLaps": {"value": 56, "confidence": "reasonable_estimate"}, "circuitLengthKm": 5.507, "referenceLapTimeSec": {"value": 96.169, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:36.169 (Leclerc, 2019)."}, "fullThrottlePct": {"value": 65, "confidence": "reasonable_estimate", "basis": "Purpose-built modern layout blending a fast uphill Turn 1 esses section with a long back straight."}, "fuelPerLapKg": {"value": 1.82, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium", "confidence": "reasonable_estimate", "basis": "Long back straight (Turn 11/12) into a hairpin is a consistent DRS pass; rest of lap is more technical."}},
-    {"id": "mexico_city", "raceDistanceKm": 305.354, "raceLaps": {"value": 71, "confidence": "reasonable_estimate"}, "circuitLengthKm": 4.301, "referenceLapTimeSec": {"value": 77.774, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:17.774 (Bottas, 2021)."}, "fullThrottlePct": {"value": 55, "confidence": "confirmed", "basis": "Publicly reported among the calendar's lower full-throttle circuits, grouped with Monaco/Singapore/Hungary -- thin high-altitude air reduces effective drag but the stadium section is tight.", "source": "web search of F1 technical-preview coverage"}, "fuelPerLapKg": {"value": 1.42, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium_high", "confidence": "reasonable_estimate", "basis": "Very long main straight is a strong DRS pass, but the tight stadium section (Turns 12-15) is single-file and pass-resistant."}},
-    {"id": "interlagos", "raceDistanceKm": 305.879, "raceLaps": {"value": 71, "confidence": "reasonable_estimate"}, "circuitLengthKm": 4.309, "referenceLapTimeSec": {"value": 70.540, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:10.540 (Bottas, 2018)."}, "fullThrottlePct": {"value": 65, "confidence": "reasonable_estimate", "basis": "Short, undulating lap with a decent-length start/finish straight (uphill) balanced by a tighter infield."}, "fuelPerLapKg": {"value": 1.46, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "low_medium", "confidence": "reasonable_estimate", "basis": "Short lap, uphill straight into Turn 1, and frequent mixed-weather races combine to make this a historically good overtaking/racing circuit."}},
-    {"id": "las_vegas", "raceDistanceKm": 309.958, "raceLaps": {"value": 50, "confidence": "reasonable_estimate"}, "circuitLengthKm": 6.199, "referenceLapTimeSec": {"value": 95.490, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:35.490 (Piastri, 2023)."}, "fullThrottlePct": {"value": 80, "confidence": "reasonable_estimate", "basis": "Dominated by the ~1.9km Strip straight and other long straights; very high full-throttle proportion, similar tier to Monza/Jeddah."}, "fuelPerLapKg": {"value": 2.09, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium", "confidence": "reasonable_estimate", "basis": "Very long straights favour DRS passing, offset by a tighter, low-grip street-circuit final sector."}},
-    {"id": "lusail", "raceDistanceKm": 308.611, "raceLaps": {"value": 57, "confidence": "reasonable_estimate"}, "circuitLengthKm": 5.414, "referenceLapTimeSec": {"value": 84.319, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:24.319 (Verstappen, 2023)."}, "fullThrottlePct": {"value": 70, "confidence": "reasonable_estimate", "basis": "High-speed, sweeping MotoGP-derived layout with few slow corners."}, "fuelPerLapKg": {"value": 1.81, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium", "confidence": "reasonable_estimate", "basis": "Flowing, high-speed layout with limited hard-braking zones makes overtaking possible but not easy."}},
-    {"id": "yas_marina", "raceDistanceKm": 306.183, "raceLaps": {"value": 58, "confidence": "reasonable_estimate"}, "circuitLengthKm": 5.279, "referenceLapTimeSec": {"value": 86.103, "confidence": "reasonable_estimate", "basis": "F1 GP lap record, ~1:26.103 (Verstappen, 2021, current post-2021-reprofile layout)."}, "fullThrottlePct": {"value": 62, "confidence": "reasonable_estimate", "basis": "2021 reprofile widened several corners and shortened the old hotel-section chicane, raising full-throttle time and overtaking chances vs the pre-2021 layout."}, "fuelPerLapKg": {"value": 1.74, "confidence": "reasonable_estimate", "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."}, "overtakingDifficulty": {"tier": "medium", "confidence": "reasonable_estimate", "basis": "The 2021 reprofile was specifically designed to improve overtaking versus the old processional layout; meaningfully easier to pass on since."}},
-    {"id": "madring", "raceDistanceKm": null, "raceLaps": {"value": 56, "confidence": "placeholder", "basis": "No race run yet (first race Sept 2026). Estimated from the ~305km standard minimum race distance / stated 5.4km circuit length; not confirmed."}, "circuitLengthKm": 5.4, "referenceLapTimeSec": {"value": null, "confidence": "placeholder", "basis": "No race or qualifying session run yet; no basis for even an informed estimate."}, "fullThrottlePct": {"value": 60, "confidence": "placeholder", "basis": "Rough Miami-hybrid-circuit analogue per tracks.json's existing 'comparable to Miami's hybrid feel' note -- not an independent estimate."}, "fuelPerLapKg": {"value": 1.77, "confidence": "placeholder", "basis": "Formula-derived from the placeholder circuitLengthKm/fullThrottlePct above; inherits their placeholder status."}, "overtakingDifficulty": {"tier": "unknown", "confidence": "placeholder", "basis": "No historical races run yet at time of writing (2026-07-10)."}, "notes": "New to the 2026 calendar / F1 25: 2026 Season Pack, replaces Barcelona as Spanish GP host. See tracks.json for full circuit notes."}
+    {
+      "id": "albert_park",
+      "raceDistanceKm": 306.124,
+      "raceLaps": {
+        "value": 58,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 5.278,
+      "referenceLapTimeSec": {
+        "value": 79.813,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:19.813 (Leclerc, 2024, current post-2022 reprofiled layout)."
+      },
+      "fullThrottlePct": {
+        "value": 75,
+        "confidence": "reasonable_estimate",
+        "basis": "2022+ layout removed several chicanes in favour of flowing corners, raising full-throttle time markedly vs the old street-adjacent layout."
+      },
+      "fuelPerLapKg": {
+        "value": 1.79,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium",
+        "confidence": "reasonable_estimate",
+        "basis": "Wide, modern layout with multiple DRS zones post-reprofile; better overtaking than its old chicane-heavy reputation."
+      },
+      "corners": {
+        "value": 14,
+        "confidence": "reasonable_estimate",
+        "basis": "Current post-2022 layout turn count, widely published circuit spec."
+      }
+    },
+    {
+      "id": "shanghai",
+      "raceDistanceKm": 305.066,
+      "raceLaps": {
+        "value": 56,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 5.449,
+      "referenceLapTimeSec": {
+        "value": 92.238,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:32.238 (Schumacher, 2004)."
+      },
+      "fullThrottlePct": {
+        "value": 58,
+        "confidence": "reasonable_estimate",
+        "basis": "Long back straight offset by a tight, twisty infield section (Turns 1-3 spiral, Turn 14 hairpin)."
+      },
+      "fuelPerLapKg": {
+        "value": 1.78,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium",
+        "confidence": "reasonable_estimate",
+        "basis": "Long back straight into a hairpin is a reliable overtaking spot; rest of lap is tighter and harder to pass on."
+      },
+      "corners": {
+        "value": 16,
+        "confidence": "confirmed",
+        "basis": "9 right-handers + 7 left-handers, independently verified 2026-07-11.",
+        "source": "https://en.wikipedia.org/wiki/Shanghai_International_Circuit"
+      }
+    },
+    {
+      "id": "suzuka",
+      "raceDistanceKm": 307.471,
+      "raceLaps": {
+        "value": 53,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 5.802,
+      "referenceLapTimeSec": {
+        "value": 90.965,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:30.965 (Antonelli, 2025)."
+      },
+      "fullThrottlePct": {
+        "value": 66,
+        "confidence": "reasonable_estimate",
+        "basis": "Publicly reported ~66% full throttle (high-speed Esses/130R offset by the tight chicane/hairpin)."
+      },
+      "fuelPerLapKg": {
+        "value": 1.92,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "high",
+        "confidence": "reasonable_estimate",
+        "basis": "Narrow, high-speed, historically one of the hardest calendar circuits to pass on outside the final chicane/main straight."
+      },
+      "corners": {
+        "value": 18,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec (figure-eight layout)."
+      }
+    },
+    {
+      "id": "bahrain",
+      "raceDistanceKm": 308.238,
+      "raceLaps": {
+        "value": 57,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 5.408,
+      "referenceLapTimeSec": {
+        "value": 91.447,
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:31.447 (Pedro de la Rosa, McLaren MP4-20, 2005 Bahrain GP) -- independently verified via Wikipedia 2026-07-10.",
+        "source": "https://en.wikipedia.org/wiki/Bahrain_International_Circuit"
+      },
+      "fullThrottlePct": {
+        "value": 70,
+        "confidence": "reasonable_estimate",
+        "basis": "Long start/finish straight and back straight, generous run-off desert layout."
+      },
+      "fuelPerLapKg": {
+        "value": 1.81,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium",
+        "confidence": "reasonable_estimate",
+        "basis": "Multiple wide, heavy-braking zones off the two long straights; designed with overtaking in mind."
+      },
+      "corners": {
+        "value": 15,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec (Grand Prix layout)."
+      }
+    },
+    {
+      "id": "jeddah",
+      "raceDistanceKm": 308.45,
+      "raceLaps": {
+        "value": 50,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 6.169,
+      "referenceLapTimeSec": {
+        "value": 90.734,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:30.734 (Verstappen-era pace, 2021-2025 range)."
+      },
+      "fullThrottlePct": {
+        "value": 79,
+        "confidence": "confirmed",
+        "basis": "Publicly reported ~79% full throttle, ~155mph+ average speed -- one of the highest-speed circuits on the calendar.",
+        "source": "https://www.the-race.com/formula-1/79-full-throttle-155mph-average-what-we-expect-from-jeddah/"
+      },
+      "fuelPerLapKg": {
+        "value": 2.08,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium_high",
+        "confidence": "reasonable_estimate",
+        "basis": "Very high average speed makes overtaking committal and wall-proximity risky despite reasonable straight-line opportunities."
+      },
+      "corners": {
+        "value": 27,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec -- most corners of any circuit on the calendar."
+      }
+    },
+    {
+      "id": "miami",
+      "raceDistanceKm": 308.326,
+      "raceLaps": {
+        "value": 57,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 5.409,
+      "referenceLapTimeSec": {
+        "value": 89.708,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:29.708 (Verstappen, 2023)."
+      },
+      "fullThrottlePct": {
+        "value": 60,
+        "confidence": "reasonable_estimate",
+        "basis": "Mixed layout: long back straight (Turns 16-17 run) offset by a tight stadium chicane section (Turns 14-17)."
+      },
+      "fuelPerLapKg": {
+        "value": 1.77,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium",
+        "confidence": "reasonable_estimate",
+        "basis": "Long straight into Turn 11 hairpin is a reliable DRS pass; stadium section is tight and pass-resistant."
+      },
+      "corners": {
+        "value": 19,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "imola",
+      "raceDistanceKm": 309.049,
+      "raceLaps": {
+        "value": 63,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 4.906,
+      "referenceLapTimeSec": {
+        "value": 75.484,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:15.484 (Hamilton, 2020)."
+      },
+      "fullThrottlePct": {
+        "value": 72,
+        "confidence": "reasonable_estimate",
+        "basis": "Fast, flowing old-school layout (Tamburello/Villeneuve straights) with few slow corners."
+      },
+      "fuelPerLapKg": {
+        "value": 1.67,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "high",
+        "confidence": "reasonable_estimate",
+        "basis": "Narrow, wall-lined circuit with very few genuine overtaking spots (Tamburello/Variante Alta straights are the main chances)."
+      },
+      "corners": {
+        "value": 19,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "monaco",
+      "raceDistanceKm": 260.286,
+      "raceLaps": {
+        "value": 78,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 3.337,
+      "referenceLapTimeSec": {
+        "value": 72.909,
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:12.909 (Lewis Hamilton, Mercedes W12, 2021 Monaco GP, current post-2015 layout) -- independently verified via Wikipedia 2026-07-10.",
+        "source": "https://en.wikipedia.org/wiki/Circuit_de_Monaco"
+      },
+      "fullThrottlePct": {
+        "value": 40,
+        "confidence": "reasonable_estimate",
+        "basis": "Lowest full-throttle circuit on the calendar -- reported lower than Hungaroring's ~53%, tightest street layout with no genuine straight."
+      },
+      "fuelPerLapKg": {
+        "value": 1.07,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "very_high",
+        "confidence": "confirmed",
+        "basis": "Definitionally the calendar's hardest circuit to overtake on -- track width barely exceeds car width in most sections; near-universally cited in F1 broadcast/technical coverage."
+      },
+      "corners": {
+        "value": 19,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec (current post-2015-layout count)."
+      }
+    },
+    {
+      "id": "barcelona",
+      "raceDistanceKm": 307.236,
+      "raceLaps": {
+        "value": 66,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 4.655,
+      "referenceLapTimeSec": {
+        "value": 76.33,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:16.330 (Verstappen, 2023)."
+      },
+      "fullThrottlePct": {
+        "value": 65,
+        "confidence": "reasonable_estimate",
+        "basis": "Mix of high-speed sweepers (old Turns 3, 9) and a tighter, DRS-straight-added final sector."
+      },
+      "fuelPerLapKg": {
+        "value": 1.57,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium_high",
+        "confidence": "reasonable_estimate",
+        "basis": "Widely regarded as overtaking-difficult despite DRS zones -- high-speed, aero-sensitive corners punish following closely."
+      },
+      "notes": "Replaced on the 2026 calendar by Madring; retained for 2025-relevant F1 25 base-game modeling.",
+      "corners": {
+        "value": 14,
+        "confidence": "confirmed",
+        "basis": "MotoGP-derived final-sector layout used by F1 since the 2023 Spanish GP (removed the old chicane); older sources citing 16 are the pre-2023 layout. Independently verified 2026-07-11.",
+        "source": "https://en.wikipedia.org/wiki/Circuit_de_Barcelona-Catalunya"
+      }
+    },
+    {
+      "id": "montreal",
+      "raceDistanceKm": 305.27,
+      "raceLaps": {
+        "value": 70,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 4.361,
+      "referenceLapTimeSec": {
+        "value": 73.078,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:13.078 (Bottas, 2019)."
+      },
+      "fullThrottlePct": {
+        "value": 72,
+        "confidence": "reasonable_estimate",
+        "basis": "Stop-start layout of long straights into heavy-braking chicanes."
+      },
+      "fuelPerLapKg": {
+        "value": 1.51,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "low_medium",
+        "confidence": "reasonable_estimate",
+        "basis": "Multiple long straights and heavy braking zones (Turn 1, hairpin) make it one of the calendar's better overtaking circuits."
+      },
+      "corners": {
+        "value": 14,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "red_bull_ring",
+      "raceDistanceKm": 306.452,
+      "raceLaps": {
+        "value": 71,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 4.318,
+      "referenceLapTimeSec": {
+        "value": 65.619,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:05.619 (Sainz, 2020)."
+      },
+      "fullThrottlePct": {
+        "value": 68,
+        "confidence": "reasonable_estimate",
+        "basis": "Short lap dominated by three long uphill/downhill straights."
+      },
+      "fuelPerLapKg": {
+        "value": 1.48,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "low",
+        "confidence": "reasonable_estimate",
+        "basis": "Short lap with three genuine straight-into-heavy-braking overtaking zones; consistently produces high overtaking counts."
+      },
+      "corners": {
+        "value": 10,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec -- fewest corners of any calendar circuit."
+      }
+    },
+    {
+      "id": "silverstone",
+      "raceDistanceKm": 306.198,
+      "raceLaps": {
+        "value": 52,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 5.891,
+      "referenceLapTimeSec": {
+        "value": 87.097,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:27.097 (Verstappen, 2020)."
+      },
+      "fullThrottlePct": {
+        "value": 70,
+        "confidence": "confirmed",
+        "basis": "Publicly reported ~70% full throttle (Maggotts-Becketts-Chapel high-speed sequence dominates the lap).",
+        "source": "https://www.motorsport.com/f1/news/high-downforce-power-tracks-f1-differences-explained/6130973/"
+      },
+      "fuelPerLapKg": {
+        "value": 1.96,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "low_medium",
+        "confidence": "reasonable_estimate",
+        "basis": "Wide, fast, flowing layout with several straight-into-braking-zone passing spots (Brooklands, Stowe, Hangar Straight into Village)."
+      },
+      "corners": {
+        "value": 18,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "spa",
+      "raceDistanceKm": 308.052,
+      "raceLaps": {
+        "value": 44,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 7.001,
+      "referenceLapTimeSec": {
+        "value": 106.286,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:46.286 (Bottas, 2018)."
+      },
+      "fullThrottlePct": {
+        "value": 73,
+        "confidence": "reasonable_estimate",
+        "basis": "Longest circuit on the calendar, dominated by the Kemmel Straight and other high-speed sections."
+      },
+      "fuelPerLapKg": {
+        "value": 2.3,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod -- highest fuel-per-lap on the calendar given its length."
+      },
+      "overtakingDifficulty": {
+        "tier": "low",
+        "confidence": "reasonable_estimate",
+        "basis": "Eau Rouge/Raidillon into the Kemmel Straight is one of F1's most famous overtaking zones; consistently high-overtaking circuit."
+      },
+      "corners": {
+        "value": 19,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "hungaroring",
+      "raceDistanceKm": 306.63,
+      "raceLaps": {
+        "value": 70,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 4.381,
+      "referenceLapTimeSec": {
+        "value": 76.627,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:16.627 (Hamilton, 2020)."
+      },
+      "fullThrottlePct": {
+        "value": 58,
+        "confidence": "confirmed",
+        "basis": "Publicly reported 53% of lap time / 61% of lap distance at full throttle; used as a blended ~58% for this field's single-number convention.",
+        "source": "web search of Mercedes-AMG F1 circuit-guide style coverage"
+      },
+      "fuelPerLapKg": {
+        "value": 1.46,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "high",
+        "confidence": "reasonable_estimate",
+        "basis": "Tight, twisty, low-average-speed 'Monaco without the walls' -- historically one of the calendar's hardest circuits to pass on."
+      },
+      "corners": {
+        "value": 14,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "zandvoort",
+      "raceDistanceKm": 306.587,
+      "raceLaps": {
+        "value": 72,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 4.259,
+      "referenceLapTimeSec": {
+        "value": 71.097,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:11.097 (Hamilton, 2021)."
+      },
+      "fullThrottlePct": {
+        "value": 55,
+        "confidence": "reasonable_estimate",
+        "basis": "Narrow dunes circuit with banked corners but limited pure straight length."
+      },
+      "fuelPerLapKg": {
+        "value": 1.41,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "high",
+        "confidence": "reasonable_estimate",
+        "basis": "Narrow, banked, limited run-off; consistently rated one of the harder modern-calendar circuits to pass on."
+      },
+      "corners": {
+        "value": 14,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec (includes the two banked corners)."
+      }
+    },
+    {
+      "id": "monza",
+      "raceDistanceKm": 306.72,
+      "raceLaps": {
+        "value": 53,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 5.789,
+      "referenceLapTimeSec": {
+        "value": 80.901,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, 1:20.901 (Norris, 2025, breaking Barrichello's long-standing 2004 record of 1:21.046)."
+      },
+      "fullThrottlePct": {
+        "value": 82,
+        "confidence": "confirmed",
+        "basis": "Publicly reported >80% full throttle -- the 'Temple of Speed,' highest full-throttle circuit on the calendar.",
+        "source": "web search of F1 technical-preview coverage"
+      },
+      "fuelPerLapKg": {
+        "value": 1.98,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "low",
+        "confidence": "reasonable_estimate",
+        "basis": "Lowest-downforce, highest-speed layout on the calendar with three chicane-into-braking-zone passing spots; historically high overtaking counts."
+      },
+      "corners": {
+        "value": 11,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec -- lowest-corner-count high-speed layout."
+      }
+    },
+    {
+      "id": "baku",
+      "raceDistanceKm": 306.049,
+      "raceLaps": {
+        "value": 51,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 6.001,
+      "referenceLapTimeSec": {
+        "value": 103.009,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:43.009 (Leclerc, 2019)."
+      },
+      "fullThrottlePct": {
+        "value": 65,
+        "confidence": "reasonable_estimate",
+        "basis": "One of the longest straights on the calendar (2.2km) offset by a very tight, low-speed castle-section old-town sector."
+      },
+      "fuelPerLapKg": {
+        "value": 1.97,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium",
+        "confidence": "reasonable_estimate",
+        "basis": "The long straight is a reliable DRS pass; the castle section is single-file and pass-resistant."
+      },
+      "corners": {
+        "value": 20,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "singapore",
+      "raceDistanceKm": 306.143,
+      "raceLaps": {
+        "value": 62,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 4.94,
+      "referenceLapTimeSec": {
+        "value": 101.905,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:41.905 (post-2023 layout-shortening era)."
+      },
+      "fullThrottlePct": {
+        "value": 49,
+        "confidence": "confirmed",
+        "basis": "Publicly reported ~49% full throttle -- one of the lowest on the calendar.",
+        "source": "web search of F1 technical-preview coverage"
+      },
+      "fuelPerLapKg": {
+        "value": 1.59,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "very_high",
+        "confidence": "reasonable_estimate",
+        "basis": "Narrow, walled street circuit with very few genuine passing zones; historically one of the calendar's hardest-to-pass venues alongside Monaco."
+      },
+      "corners": {
+        "value": 19,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec, current post-2023 (Turn 16-17 removal) layout."
+      }
+    },
+    {
+      "id": "cota",
+      "raceDistanceKm": 308.405,
+      "raceLaps": {
+        "value": 56,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 5.507,
+      "referenceLapTimeSec": {
+        "value": 96.169,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:36.169 (Leclerc, 2019)."
+      },
+      "fullThrottlePct": {
+        "value": 65,
+        "confidence": "reasonable_estimate",
+        "basis": "Purpose-built modern layout blending a fast uphill Turn 1 esses section with a long back straight."
+      },
+      "fuelPerLapKg": {
+        "value": 1.82,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium",
+        "confidence": "reasonable_estimate",
+        "basis": "Long back straight (Turn 11/12) into a hairpin is a consistent DRS pass; rest of lap is more technical."
+      },
+      "corners": {
+        "value": 20,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "mexico_city",
+      "raceDistanceKm": 305.354,
+      "raceLaps": {
+        "value": 71,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 4.301,
+      "referenceLapTimeSec": {
+        "value": 77.774,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:17.774 (Bottas, 2021)."
+      },
+      "fullThrottlePct": {
+        "value": 55,
+        "confidence": "confirmed",
+        "basis": "Publicly reported among the calendar's lower full-throttle circuits, grouped with Monaco/Singapore/Hungary -- thin high-altitude air reduces effective drag but the stadium section is tight.",
+        "source": "web search of F1 technical-preview coverage"
+      },
+      "fuelPerLapKg": {
+        "value": 1.42,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium_high",
+        "confidence": "reasonable_estimate",
+        "basis": "Very long main straight is a strong DRS pass, but the tight stadium section (Turns 12-15) is single-file and pass-resistant."
+      },
+      "corners": {
+        "value": 17,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "interlagos",
+      "raceDistanceKm": 305.879,
+      "raceLaps": {
+        "value": 71,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 4.309,
+      "referenceLapTimeSec": {
+        "value": 70.54,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:10.540 (Bottas, 2018)."
+      },
+      "fullThrottlePct": {
+        "value": 65,
+        "confidence": "reasonable_estimate",
+        "basis": "Short, undulating lap with a decent-length start/finish straight (uphill) balanced by a tighter infield."
+      },
+      "fuelPerLapKg": {
+        "value": 1.46,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "low_medium",
+        "confidence": "reasonable_estimate",
+        "basis": "Short lap, uphill straight into Turn 1, and frequent mixed-weather races combine to make this a historically good overtaking/racing circuit."
+      },
+      "corners": {
+        "value": 15,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "las_vegas",
+      "raceDistanceKm": 309.958,
+      "raceLaps": {
+        "value": 50,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 6.199,
+      "referenceLapTimeSec": {
+        "value": 95.49,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:35.490 (Piastri, 2023)."
+      },
+      "fullThrottlePct": {
+        "value": 80,
+        "confidence": "reasonable_estimate",
+        "basis": "Dominated by the ~1.9km Strip straight and other long straights; very high full-throttle proportion, similar tier to Monza/Jeddah."
+      },
+      "fuelPerLapKg": {
+        "value": 2.09,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium",
+        "confidence": "reasonable_estimate",
+        "basis": "Very long straights favour DRS passing, offset by a tighter, low-grip street-circuit final sector."
+      },
+      "corners": {
+        "value": 17,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "lusail",
+      "raceDistanceKm": 308.611,
+      "raceLaps": {
+        "value": 57,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 5.414,
+      "referenceLapTimeSec": {
+        "value": 84.319,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:24.319 (Verstappen, 2023)."
+      },
+      "fullThrottlePct": {
+        "value": 70,
+        "confidence": "reasonable_estimate",
+        "basis": "High-speed, sweeping MotoGP-derived layout with few slow corners."
+      },
+      "fuelPerLapKg": {
+        "value": 1.81,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium",
+        "confidence": "reasonable_estimate",
+        "basis": "Flowing, high-speed layout with limited hard-braking zones makes overtaking possible but not easy."
+      },
+      "corners": {
+        "value": 16,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec."
+      }
+    },
+    {
+      "id": "yas_marina",
+      "raceDistanceKm": 306.183,
+      "raceLaps": {
+        "value": 58,
+        "confidence": "reasonable_estimate"
+      },
+      "circuitLengthKm": 5.279,
+      "referenceLapTimeSec": {
+        "value": 86.103,
+        "confidence": "reasonable_estimate",
+        "basis": "F1 GP lap record, ~1:26.103 (Verstappen, 2021, current post-2021-reprofile layout)."
+      },
+      "fullThrottlePct": {
+        "value": 62,
+        "confidence": "reasonable_estimate",
+        "basis": "2021 reprofile widened several corners and shortened the old hotel-section chicane, raising full-throttle time and overtaking chances vs the pre-2021 layout."
+      },
+      "fuelPerLapKg": {
+        "value": 1.74,
+        "confidence": "reasonable_estimate",
+        "basis": "Formula-derived, see _meta.fuelPerLapKgMethod."
+      },
+      "overtakingDifficulty": {
+        "tier": "medium",
+        "confidence": "reasonable_estimate",
+        "basis": "The 2021 reprofile was specifically designed to improve overtaking versus the old processional layout; meaningfully easier to pass on since."
+      },
+      "corners": {
+        "value": 16,
+        "confidence": "reasonable_estimate",
+        "basis": "Widely published circuit spec, current post-2021-reprofile layout."
+      }
+    },
+    {
+      "id": "madring",
+      "raceDistanceKm": null,
+      "raceLaps": {
+        "value": 56,
+        "confidence": "placeholder",
+        "basis": "No race run yet (first race Sept 2026). Estimated from the ~305km standard minimum race distance / stated 5.4km circuit length; not confirmed."
+      },
+      "circuitLengthKm": 5.4,
+      "referenceLapTimeSec": {
+        "value": null,
+        "confidence": "placeholder",
+        "basis": "No race or qualifying session run yet; no basis for even an informed estimate."
+      },
+      "fullThrottlePct": {
+        "value": 60,
+        "confidence": "placeholder",
+        "basis": "Rough Miami-hybrid-circuit analogue per tracks.json's existing 'comparable to Miami's hybrid feel' note -- not an independent estimate."
+      },
+      "fuelPerLapKg": {
+        "value": 1.77,
+        "confidence": "placeholder",
+        "basis": "Formula-derived from the placeholder circuitLengthKm/fullThrottlePct above; inherits their placeholder status."
+      },
+      "overtakingDifficulty": {
+        "tier": "unknown",
+        "confidence": "placeholder",
+        "basis": "No historical races run yet at time of writing (2026-07-10)."
+      },
+      "notes": "New to the 2026 calendar / F1 25: 2026 Season Pack, replaces Barcelona as Spanish GP host. See tracks.json for full circuit notes.",
+      "corners": {
+        "value": 22,
+        "confidence": "confirmed",
+        "basis": "Already sourced in tracks.json circuits[].notes for this circuit (5.4km, 22 corners), reused here for consistency rather than re-deriving."
+      }
+    }
   ]
 }

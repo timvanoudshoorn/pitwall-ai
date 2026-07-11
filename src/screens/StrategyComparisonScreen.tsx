@@ -1,16 +1,60 @@
+import { useMemo } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { Panel } from '../components/ui/Panel';
 import { CompoundChip } from '../components/ui/CompoundChip';
 import { StatusBadge } from '../components/ui/StatusBadge';
-import { MOCK_CLEAR_WINNER } from '../ai/mockFixtures';
+import { buildStrategyComparison, RaceSimAdapterError } from '../lib/raceSimAdapter';
+import type { AppSelection } from '../types/session';
 import type { StrategyCandidate } from '../ai/types';
 
+/** Human-readable captions for sim's assumptionsUsed flag ids — anything not listed falls back to the raw flag id. */
+const FLAG_LABELS: Record<string, string> = {
+  base_lap_time_generic_placeholder: 'Base laptime uses a generic 90s placeholder (no per-track figure published yet)',
+  pit_lane_delta_generic_placeholder: 'Pit-lane delta uses a generic placeholder, not track-specific data',
+  pit_stationary_time_placeholder: 'Stationary pit time uses a generic placeholder',
+  safety_car_probability_generic_placeholder: 'Safety-car probability uses a generic circuit-type default',
+  vsc_probability_generic_placeholder: 'VSC probability uses a generic circuit-type default',
+};
+
+function describeFlag(flag: string): string {
+  if (FLAG_LABELS[flag]) return FLAG_LABELS[flag];
+  if (flag.includes('pit_loss_source_confidence_')) return `Pit-loss figure confidence: ${flag.split('_').pop()}`;
+  if (flag.includes('base_lap_time_source_confidence_')) return `Base laptime figure confidence: ${flag.split('_').pop()}`;
+  if (flag.includes('safety_car_source_confidence_')) return `Safety-car figure confidence: ${flag.split('_').pop()}`;
+  return flag.replace(/_/g, ' ');
+}
+
 /**
- * Uses ai's MOCK_CLEAR_WINNER fixture directly (same shape sim's real
- * output will have) — swap for a live StrategyComparison prop once sim's
- * engine is wired end-to-end.
+ * Calls sim's real compareStrategies() (via src/lib/raceSimAdapter.ts) off
+ * the current app selection — replaces ai's MOCK_CLEAR_WINNER fixture now
+ * that sim's engine is wired end-to-end. assumptionsUsed flags are
+ * surfaced directly rather than hidden, per CLAUDE.md's grounding
+ * philosophy (a placeholder number should never look calibrated).
  */
-export function StrategyComparisonScreen() {
-  const { raceContext, strategies, recommendedStrategyId, marginAnalysis } = MOCK_CLEAR_WINNER;
+export function StrategyComparisonScreen({ selection }: { selection: AppSelection }) {
+  const result = useMemo(() => {
+    try {
+      return { comparison: buildStrategyComparison(selection), error: null as string | null };
+    } catch (err) {
+      const message = err instanceof RaceSimAdapterError ? err.message : 'Could not build a strategy comparison for this selection.';
+      return { comparison: null, error: message };
+    }
+  }, [selection]);
+
+  if (!result.comparison) {
+    return (
+      <div className="mx-auto flex max-w-5xl flex-col gap-5">
+        <Panel eyebrow="Strategy Comparison" title="No comparison yet">
+          <div className="flex items-center gap-2 text-sm text-pit-text-secondary">
+            <AlertTriangle size={16} className="text-status-warning" />
+            {result.error}
+          </div>
+        </Panel>
+      </div>
+    );
+  }
+
+  const { raceContext, strategies, recommendedStrategyId, marginAnalysis, assumptionsUsed } = result.comparison;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-5">
@@ -32,6 +76,20 @@ export function StrategyComparisonScreen() {
             </StatusBadge>
           )}
         </div>
+
+        {assumptionsUsed.length > 0 && (
+          <div className="mt-3 border-t border-pit-border pt-3">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-pit-text-muted uppercase">
+              <AlertTriangle size={12} />
+              Modeling assumptions in this comparison
+            </div>
+            <ul className="space-y-0.5 text-[11px] leading-snug text-pit-text-muted">
+              {assumptionsUsed.map((flag) => (
+                <li key={flag}>· {describeFlag(flag)}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </Panel>
     </div>
   );

@@ -61,3 +61,62 @@ Next: none blocking — every screen has had a first pass. Watching for
 sim's real `StrategyComparison` output (swap out the ai fixtures),
 data's `src/data/` reference files (swap out `src/mocks/`), and a
 decision on the AI Explanation backend call site.
+
+## 2026-07-10/11 — Wired StrategyComparisonScreen + AIExplanationScreen off real sim/ai output
+
+- Picked this up as the last major integration step per the plan doc.
+  Read sim's `strategyCompare.ts`/`RaceSimInput` and ai's
+  `explain.ts`/`promptBuilder.ts`/`client.ts` in full before wiring
+  anything — messaged sim and ai teammates directly with my planned
+  field-by-field mapping and proceeded once addresses resolved (name-based
+  `SendMessage` needed the raw agent id, not the plain teammate name).
+- New `src/lib/strategyCandidates.ts` — generates the 1/2/3-stop candidate
+  `StrategyPlan[]` compareStrategies() needs, splitting laps per compound
+  proportional to `TYRE_COMPOUNDS[compound].nominalLife` rather than an
+  even split. Explicitly a visual-owned heuristic, not sim math — flagged
+  to sim in case they'd rather own "candidate strategy generation" later.
+- New `src/lib/raceSimAdapter.ts` — `buildStrategyComparison(selection)`
+  builds a real `RaceSimInput` from `AppSelection` + `data/tracks.json` +
+  `data/track-tyre-characteristics.json` + `data/track-lap-reference.json`
+  (the last one landed from data/sim mid-task and immediately replaced
+  what would have been a flat 90s base-laptime placeholder for every
+  track — good timing) and calls sim's real `compareStrategies()`. Only
+  one genuinely visual-invented number in the whole chain:
+  `SAFETY_CAR_TIER_TO_PCT`, an interpolation from data's qualitative
+  safety-car tier labels (`low`/`medium`/`high`/`very_high`/...) to a 0-100
+  spread for sim's `safetyCarProbability()` override param, since data's
+  tier field has no numeric form yet — documented in-file as visual's own
+  estimate, not a data/sim-sourced number, and still carries data's own
+  `sourceConfidence` tag through to the assumption flags.
+- `StrategyComparisonScreen` now calls `buildStrategyComparison()` via
+  `useMemo` keyed on `selection` (replaces `MOCK_CLEAR_WINNER` entirely),
+  renders a "modeling assumptions" footer listing every
+  `assumptionsUsed` flag in plain language instead of hiding them —
+  matches CLAUDE.md's grounding philosophy that a placeholder number
+  should never look calibrated. Guards incomplete selection
+  (no class/track picked) with an inline warning instead of crashing.
+- `AIExplanationScreen` now builds the same real `StrategyComparison` and
+  runs ai's actual `buildPrompt()` / `buildTrackReferenceFacts()` so that
+  plumbing is live end-to-end — but the rendered "engineer" text is a
+  deterministic template built from the comparison's real numbers, NOT a
+  live Claude call. Confirmed with ai teammate before proceeding: no safe
+  place exists yet to hold the API key in this browser bundle (documented
+  blocker in `src/ai/client.ts`, an infra decision that's explicitly
+  neither visual's nor ai's to make alone). Made the "not a live call"
+  labeling far more prominent (a persistent warning-colored banner, not a
+  small trailing string) and added a collapsible "prompt preview" panel
+  that renders the actual system/user prompt ai's `buildPrompt()` would
+  send, so the pipeline is demonstrably real even though the network hop
+  isn't wired.
+- Verified with a headless-Chromium pass (`npx playwright install
+  chromium`, ad hoc driver script, deleted after use) against the running
+  dev server: both screens render real per-track numbers (Silverstone
+  1-stop recommended, 5.0s margin, correct compound/lap splits), the
+  assumption-flag footer lists real flags, the why-not-alternative prompt
+  preview shows ai's actual grounding-rules system prompt verbatim, zero
+  console errors across both screens and both explanation modes.
+- `npx tsc --noEmit` and `npm run build` both clean.
+- Not yet touched: `PitWindowScreen` and `StrategyBattleScreen` are still
+  on `MOCK_CLOSE_CALL` — flagged as a natural follow-up (same adapter,
+  trivial to wire) but out of scope for this pass, which was scoped to
+  the two screens named in the task.

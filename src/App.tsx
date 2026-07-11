@@ -36,10 +36,10 @@ function App() {
         <Routes>
           <Route path="/" element={<CarClassTrackSelectScreen selection={selection} onChange={patchSelection} />} />
           <Route path="/parameters" element={<RaceParametersScreen selection={selection} onChange={patchSelection} />} />
-          <Route path="/comparison" element={<StrategyComparisonScreen />} />
+          <Route path="/comparison" element={<StrategyComparisonScreen selection={selection} />} />
           <Route path="/degradation" element={<TyreDegradationScreen selection={selection} />} />
           <Route path="/pit-window" element={<PitWindowScreen />} />
-          <Route path="/explanation" element={<AIExplanationScreen />} />
+          <Route path="/explanation" element={<AIExplanationScreen selection={selection} />} />
           <Route path="/battle" element={<StrategyBattleScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
         </Routes>

@@ -128,13 +128,32 @@ schematic, not a map" framing either way.
 
 ## What's still open / stubbed
 
-- **AI Explanation screen** renders a fixed mock `ExplanationResult` — it
-  does not call the live Claude API (correctly: the browser can't hold the
-  key, see `src/ai/client.ts`). Needs a backend/serverless call site before
-  this can go live; that's an infra decision flagged in the plan doc, not
-  visual's or ai's alone to make.
-- **Strategy Battle** screen has no lap-by-lap gap-evolution chart yet —
-  sim hasn't produced a per-lap position/gap series. Flagged to sim.
-- Car-class/track display metadata in `src/mocks/` is a placeholder pending
-  `src/data/` — ids match `sim/constants.ts` exactly so the swap is
-  mechanical.
+- **AI Explanation screen** builds real prompts (`ai.buildPrompt()`) against
+  real `StrategyComparison` output, but renders a deterministic template
+  instead of a live Claude API response — the browser can't hold the API
+  key (see `src/ai/client.ts`). A prominent "not a live Claude call" banner
+  plus a collapsible prompt-preview panel make this unmistakable in the UI.
+  Needs a backend/serverless call site before this can go live; that's an
+  infra decision flagged in the plan doc (see its closing section on API
+  cost/key custody), not visual's or ai's alone to make.
+- Everything else in the original scope is wired end-to-end and covered by
+  an automated Vitest suite (`src/sim/__tests__/`, `npm run test`, 130
+  tests): tyre degradation, fuel effect, pit-stop loss, undercut/overcut,
+  one/two/three-stop comparison, safety-car/weather Monte Carlo (now
+  qualifying-format-aware — One-Shot scatters the grid and raises SC/VSC
+  risk, Full Qualifying lowers it), 2026 ERS/Active Aero guidance,
+  performance-tier scaling, Strategy Battle's lap-by-lap gap-evolution
+  chart, and the telemetry-import stretch feature (a Settings-screen panel
+  where a user's own lap times recalibrate personal pace, threaded through
+  both the simulation and the AI explanation's grounding facts).
+- `src/mocks/` has been fully retired in favor of `src/data/`'s real
+  reference files (car classes, tracks, tyre characteristics, lap
+  reference data with corner counts) — the swap described above happened
+  mechanically as promised, with one real bug caught and fixed along the
+  way (the old mock silently dropped Shanghai and Madring from Track
+  Select, and had a stale pre-2023 Barcelona corner count).
+- Test coverage is sim-layer only so far (`src/sim/__tests__/`) — no
+  automated UI/component tests yet for the screens, adapters
+  (`raceSimAdapter.ts`), or AI grounding logic. Manual headless-Chromium
+  passes have covered this repeatedly but aren't checked into the repo as
+  repeatable tests.

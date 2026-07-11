@@ -1,9 +1,26 @@
 import { Panel } from '../components/ui/Panel';
+import { NoComparisonNotice } from '../components/ui/NoComparisonNotice';
 import { PitWindowTimeline } from '../components/charts/PitWindowTimeline';
-import { MOCK_CLOSE_CALL } from '../ai/mockFixtures';
+import { useStrategyComparison } from '../lib/useStrategyComparison';
+import type { AppSelection } from '../types/session';
 
-export function PitWindowScreen() {
-  const { raceContext, strategies, recommendedStrategyId } = MOCK_CLOSE_CALL;
+/**
+ * Calls sim's real compareStrategies() (via useStrategyComparison, same
+ * adapter as StrategyComparisonScreen) — replaces ai's MOCK_CLOSE_CALL
+ * fixture now that sim's engine is wired end-to-end.
+ */
+export function PitWindowScreen({ selection }: { selection: AppSelection }) {
+  const { comparison, error } = useStrategyComparison(selection);
+
+  if (!comparison) {
+    return (
+      <div className="mx-auto flex max-w-5xl flex-col gap-5">
+        <NoComparisonNotice title="No pit window yet" message={error} />
+      </div>
+    );
+  }
+
+  const { raceContext, strategies, recommendedStrategyId } = comparison;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-5">

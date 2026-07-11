@@ -1,23 +1,53 @@
 import { Panel } from '../components/ui/Panel';
 import { CompoundChip } from '../components/ui/CompoundChip';
-import { MOCK_CLOSE_CALL } from '../ai/mockFixtures';
+import { NoComparisonNotice } from '../components/ui/NoComparisonNotice';
+import { useStrategyComparison } from '../lib/useStrategyComparison';
+import type { AppSelection } from '../types/session';
+import type { StrategyCandidate } from '../ai/types';
 
 /**
  * Head-to-head view: the plan lists this as a stretch feature ("if
  * built"). Sim hasn't produced a lap-by-lap gap-evolution series yet, so
- * this renders the two-strategy stint comparison it *can* support today
- * (from MOCK_CLOSE_CALL) plus a placeholder for the lap-by-lap race-gap
- * chart once that data shape exists.
+ * this renders the two-strategy stint comparison it *can* support today —
+ * calls sim's real compareStrategies() (via useStrategyComparison, same
+ * adapter as the other screens) and picks marginAnalysis.closestPairIds
+ * as the two sides, since that's the genuinely interesting head-to-head
+ * (the two candidates worth debating), not an arbitrary pair — plus a
+ * placeholder for the lap-by-lap race-gap chart once that data shape
+ * exists.
  */
-export function StrategyBattleScreen() {
-  const [left, right] = MOCK_CLOSE_CALL.strategies;
+export function StrategyBattleScreen({ selection }: { selection: AppSelection }) {
+  const { comparison, error } = useStrategyComparison(selection);
+
+  if (!comparison) {
+    return (
+      <div className="mx-auto flex max-w-4xl flex-col gap-5">
+        <NoComparisonNotice title="No battle yet" message={error} />
+      </div>
+    );
+  }
+
+  const { strategies, marginAnalysis } = comparison;
+  const [idA, idB] = marginAnalysis.closestPairIds;
+  const left = strategies.find((s) => s.id === idA) as StrategyCandidate;
+  const right = strategies.find((s) => s.id === idB) as StrategyCandidate;
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-5">
-      <Panel eyebrow="Head-to-head · stretch feature" title="Strategy Battle">
+      <Panel eyebrow="Head-to-head · closest pair" title="Strategy Battle">
         <div className="grid grid-cols-2 gap-4">
-          <BattleSide label="Strategy A" stops={left.numStops} stints={left.stints} delta={left.deltaToBestSeconds} />
-          <BattleSide label="Strategy B" stops={right.numStops} stints={right.stints} delta={right.deltaToBestSeconds} />
+          <BattleSide
+            label={left.id}
+            stops={left.numStops}
+            stints={left.stints}
+            delta={left.deltaToBestSeconds}
+          />
+          <BattleSide
+            label={right.id}
+            stops={right.numStops}
+            stints={right.stints}
+            delta={right.deltaToBestSeconds}
+          />
         </div>
 
         <div className="mt-4 flex items-center justify-center rounded-sm border border-dashed border-pit-border bg-pit-bg py-8 text-center">

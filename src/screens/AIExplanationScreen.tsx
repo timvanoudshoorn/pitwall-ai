@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ChevronDown, ChevronRight, MessageSquareText, RadioTower } from 'lucide-react';
+import { ChevronDown, ChevronRight, MessageSquareText, RadioTower } from 'lucide-react';
 import { Panel } from '../components/ui/Panel';
 import { StatusBadge } from '../components/ui/StatusBadge';
-import { buildStrategyComparison, RaceSimAdapterError } from '../lib/raceSimAdapter';
+import { NoComparisonNotice } from '../components/ui/NoComparisonNotice';
+import { useStrategyComparison } from '../lib/useStrategyComparison';
 import { buildPrompt, buildTrackReferenceFacts } from '../ai';
 import type { AppSelection } from '../types/session';
 import type { ExplanationMode, StrategyCandidate, StrategyComparison } from '../ai/types';
@@ -46,33 +47,25 @@ export function AIExplanationScreen({ selection }: { selection: AppSelection }) 
   const [mode, setMode] = useState<ExplanationMode>('recommendation');
   const [promptOpen, setPromptOpen] = useState(false);
 
-  const result = useMemo(() => {
-    try {
-      const comparison = buildStrategyComparison(selection);
-      const referenceFacts = selection.trackId ? buildTrackReferenceFacts(selection.trackId) : [];
-      const prompt = buildPrompt(mode, comparison, undefined, referenceFacts);
-      const text = buildTemplateExplanation(mode, comparison);
-      return { comparison, prompt, text, error: null as string | null };
-    } catch (err) {
-      const message = err instanceof RaceSimAdapterError ? err.message : 'Could not build an explanation for this selection.';
-      return { comparison: null, prompt: null, text: null, error: message };
-    }
-  }, [selection, mode]);
+  const { comparison, error } = useStrategyComparison(selection);
 
-  if (!result.comparison || !result.prompt || !result.text) {
+  const built = useMemo(() => {
+    if (!comparison) return null;
+    const referenceFacts = selection.trackId ? buildTrackReferenceFacts(selection.trackId) : [];
+    const prompt = buildPrompt(mode, comparison, undefined, referenceFacts);
+    const text = buildTemplateExplanation(mode, comparison);
+    return { prompt, text };
+  }, [comparison, mode, selection.trackId]);
+
+  if (!comparison || !built) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-5">
-        <Panel eyebrow="Strategy Explanation" title="No explanation yet">
-          <div className="flex items-center gap-2 text-sm text-pit-text-secondary">
-            <AlertTriangle size={16} className="text-status-warning" />
-            {result.error}
-          </div>
-        </Panel>
+        <NoComparisonNotice title="No explanation yet" message={error} />
       </div>
     );
   }
 
-  const { raceContext, marginAnalysis } = result.comparison;
+  const { raceContext, marginAnalysis } = comparison;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -106,7 +99,7 @@ export function AIExplanationScreen({ selection }: { selection: AppSelection }) 
             <MessageSquareText size={15} />
             <span className="text-xs font-semibold tracking-wide uppercase">Race Engineer (template preview)</span>
           </div>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-pit-text">{result.text}</p>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-pit-text">{built.text}</p>
         </div>
 
         <button
@@ -119,8 +112,8 @@ export function AIExplanationScreen({ selection }: { selection: AppSelection }) 
         </button>
         {promptOpen && (
           <div className="mt-2 space-y-2">
-            <PromptBlock label="System" text={result.prompt.system} />
-            <PromptBlock label="User" text={result.prompt.user} />
+            <PromptBlock label="System" text={built.prompt.system} />
+            <PromptBlock label="User" text={built.prompt.user} />
           </div>
         )}
       </Panel>

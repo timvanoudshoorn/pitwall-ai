@@ -38,9 +38,9 @@ function App() {
           <Route path="/parameters" element={<RaceParametersScreen selection={selection} onChange={patchSelection} />} />
           <Route path="/comparison" element={<StrategyComparisonScreen selection={selection} />} />
           <Route path="/degradation" element={<TyreDegradationScreen selection={selection} />} />
-          <Route path="/pit-window" element={<PitWindowScreen />} />
+          <Route path="/pit-window" element={<PitWindowScreen selection={selection} />} />
           <Route path="/explanation" element={<AIExplanationScreen selection={selection} />} />
-          <Route path="/battle" element={<StrategyBattleScreen />} />
+          <Route path="/battle" element={<StrategyBattleScreen selection={selection} />} />
           <Route path="/settings" element={<SettingsScreen />} />
         </Routes>
       </AppShell>

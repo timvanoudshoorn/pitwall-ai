@@ -116,7 +116,38 @@ decision on the AI Explanation backend call site.
   preview shows ai's actual grounding-rules system prompt verbatim, zero
   console errors across both screens and both explanation modes.
 - `npx tsc --noEmit` and `npm run build` both clean.
-- Not yet touched: `PitWindowScreen` and `StrategyBattleScreen` are still
-  on `MOCK_CLOSE_CALL` — flagged as a natural follow-up (same adapter,
-  trivial to wire) but out of scope for this pass, which was scoped to
-  the two screens named in the task.
+- bugs independently verified this pass (StrategyComparisonScreen +
+  AIExplanationScreen wiring, adapter correctness, tsc clean) before the
+  follow-up below landed.
+
+## 2026-07-11 — Wired PitWindowScreen + StrategyBattleScreen onto the same adapter
+
+- Follow-up flagged in the previous entry, picked up on request: the last
+  two screens still on ai's `MOCK_CLOSE_CALL` fixture.
+- Extracted the "build a real StrategyComparison off AppSelection, handle
+  the incomplete-selection error case" pattern that had been duplicated
+  across `StrategyComparisonScreen`/`AIExplanationScreen` into a shared
+  `src/lib/useStrategyComparison.ts` hook and a shared
+  `src/components/ui/NoComparisonNotice.tsx` fallback panel — refactored
+  the two already-wired screens onto it too so there's exactly one place
+  that owns "selection incomplete -> friendly message instead of a
+  crash" for all four consuming screens.
+- `PitWindowScreen` now feeds real `StrategyComparison.strategies` into
+  `PitWindowTimeline` instead of `MOCK_CLOSE_CALL` — no chart-component
+  changes needed, it already consumed the right shape.
+- `StrategyBattleScreen` now picks its two head-to-head sides from
+  `marginAnalysis.closestPairIds` on the real comparison (the genuinely
+  interesting pair to debate) rather than an arbitrary `strategies[0]`/
+  `strategies[1]`, which the old mock-based version implicitly did
+  because MOCK_CLOSE_CALL only had two candidates. Lap-by-lap gap chart
+  remains a stub pending a per-lap series from sim (unchanged, still
+  flagged).
+- Verified with a headless-Chromium pass against the dev server: Pit
+  Window renders the real 1/2/3-stop Gantt for Silverstone with correct
+  compound segments and pit ticks; Battle renders the real closest-pair
+  (2-stop vs 3-stop, +9.4s/+14.4s) with correct stint chips. Zero console
+  errors. `npx tsc --noEmit` and `npm run build` both clean.
+- All 8 screens are now off mock fixtures except the deliberately-stubbed
+  parts (AI Explanation's text generation — no live API call site yet;
+  Strategy Battle's lap-by-lap gap chart — no sim data shape yet). Ad hoc
+  verification scripts/screenshots deleted after use each time, per usual.

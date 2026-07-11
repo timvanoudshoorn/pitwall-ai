@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Panel } from '../components/ui/Panel';
 import { CompoundChip } from '../components/ui/CompoundChip';
 import { StatusBadge } from '../components/ui/StatusBadge';
-import { buildStrategyComparison, RaceSimAdapterError } from '../lib/raceSimAdapter';
+import { NoComparisonNotice } from '../components/ui/NoComparisonNotice';
+import { useStrategyComparison } from '../lib/useStrategyComparison';
 import type { AppSelection } from '../types/session';
 import type { StrategyCandidate } from '../ai/types';
 
@@ -32,29 +32,17 @@ function describeFlag(flag: string): string {
  * philosophy (a placeholder number should never look calibrated).
  */
 export function StrategyComparisonScreen({ selection }: { selection: AppSelection }) {
-  const result = useMemo(() => {
-    try {
-      return { comparison: buildStrategyComparison(selection), error: null as string | null };
-    } catch (err) {
-      const message = err instanceof RaceSimAdapterError ? err.message : 'Could not build a strategy comparison for this selection.';
-      return { comparison: null, error: message };
-    }
-  }, [selection]);
+  const { comparison, error } = useStrategyComparison(selection);
 
-  if (!result.comparison) {
+  if (!comparison) {
     return (
       <div className="mx-auto flex max-w-5xl flex-col gap-5">
-        <Panel eyebrow="Strategy Comparison" title="No comparison yet">
-          <div className="flex items-center gap-2 text-sm text-pit-text-secondary">
-            <AlertTriangle size={16} className="text-status-warning" />
-            {result.error}
-          </div>
-        </Panel>
+        <NoComparisonNotice title="No comparison yet" message={error} />
       </div>
     );
   }
 
-  const { raceContext, strategies, recommendedStrategyId, marginAnalysis, assumptionsUsed } = result.comparison;
+  const { raceContext, strategies, recommendedStrategyId, marginAnalysis, assumptionsUsed } = comparison;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-5">

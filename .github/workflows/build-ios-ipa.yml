@@ -1,30 +1,24 @@
-name: Build iOS IPA
+name: Build iOS IPA (unsigned)
 
-# Adapted from https://github.com/sjg/mqtt-tool/blob/main/.github/workflows/build-ios-ipa.yml
-# That workflow targets a Flutter project (flutter build ipa, pubspec.yaml, ios/Runner).
-# PitWall AI is a Vite/React web app wrapped in Capacitor, so the equivalent steps here are:
-# npm run build (Vite) -> npx cap sync ios -> xcodebuild archive/export, using the same
-# certificate/provisioning-profile-as-base64-secret pattern as the source workflow.
+# Produces an UNSIGNED .ipa, deliberately skipping Apple code signing entirely.
+# This project only has a free Apple ID (no paid Developer Program membership),
+# and free-tier signing can't be reliably automated in headless CI — it needs an
+# interactive 2FA login. Instead: build unsigned here, then sign+install locally
+# using a tool that does on-device resigning with a free Apple ID, e.g.:
+#   - Sideloadly (Windows/Mac desktop app, github.com/itsnebulalol/Sideloadly or
+#     sideloadly.io) — drag in the .ipa, enter your Apple ID, connects over USB.
+#   - AltStore (altstore.io) — similar, via a background AltServer app.
+# Either way the resulting app still expires after Apple's free-tier 7-day limit
+# and must be re-signed/reinstalled weekly; that's an Apple platform restriction,
+# not something this workflow can change.
 #
-# Required repository secrets (Settings -> Secrets and variables -> Actions):
-#   APPLE_CERTIFICATE_BASE64        Distribution (.p12) certificate, base64-encoded
-#                                    (base64 -i Certificate.p12 | pbcopy)
-#   APPLE_CERTIFICATE_PASSWORD      Password the .p12 was exported with
-#   APPLE_PROVISIONING_PROFILE_BASE64  Provisioning profile matching com.pitwallai.app,
-#                                    base64-encoded (base64 -i Profile.mobileprovision | pbcopy)
-#   APPLE_TEAM_ID                   Your Apple Developer Team ID (10-character string)
-#   KEYCHAIN_PASSWORD                Any password — only used for the temporary CI keychain
-#
-# None of these exist yet; this workflow will fail at the "Install Apple certificate and
-# provisioning profile" step until an Apple Developer account is set up and these secrets
-# are added. ios/App/ExportOptions.plist defaults to the "ad-hoc" export method (no App
-# Store Connect API key needed) — switch to "app-store" there if this should ship to TestFlight.
+# No GitHub secrets are required for this workflow.
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-ipa:
+  build-unsigned-ipa:
     runs-on: macos-latest
 
     steps:
@@ -50,73 +44,30 @@ jobs:
       - name: Sync Capacitor iOS project
         run: npx cap sync ios
 
-      - name: Install Apple certificate and provisioning profile
-        env:
-          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      - name: Build unsigned .app
         run: |
-          CERT_PATH="$RUNNER_TEMP/certificate.p12"
-          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
-          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain"
-
-          echo -n "$APPLE_CERTIFICATE_BASE64" | base64 --decode -o "$CERT_PATH"
-          echo -n "$APPLE_PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security import "$CERT_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
-          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/"//g')
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          mkdir -p ~/Library/MobileDevice/"Provisioning Profiles"
-          cp "$PROFILE_PATH" ~/Library/MobileDevice/"Provisioning Profiles/profile.mobileprovision"
-
-      - name: Set export team ID
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          /usr/libexec/PlistBuddy -c "Set :teamID $APPLE_TEAM_ID" ios/App/ExportOptions.plist
-
-      - name: Archive
-        run: |
-          xcodebuild -workspace ios/App/App.xcworkspace \
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
             -scheme App \
             -configuration Release \
-            -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            -destination "generic/platform=iOS" \
-            archive
+            -sdk iphoneos \
+            -derivedDataPath "$RUNNER_TEMP/build" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean build
 
-      - name: Export IPA
+      - name: Package unsigned .ipa
         run: |
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            -exportPath "$RUNNER_TEMP/export" \
-            -exportOptionsPlist ios/App/ExportOptions.plist
-
-      - name: Create git tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "v${{ steps.version.outputs.version }}"
-          git push origin "v${{ steps.version.outputs.version }}"
+          PRODUCTS_DIR="$RUNNER_TEMP/build/Build/Products/Release-iphoneos"
+          PAYLOAD_DIR="$RUNNER_TEMP/Payload"
+          mkdir -p "$PAYLOAD_DIR"
+          cp -r "$PRODUCTS_DIR/App.app" "$PAYLOAD_DIR/"
+          cd "$RUNNER_TEMP"
+          zip -r "PitWallAI-unsigned.ipa" Payload
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PitWallAI-${{ steps.version.outputs.version }}
-          path: ${{ runner.temp }}/export/*.ipa
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: "v${{ steps.version.outputs.version }}"
-          files: ${{ runner.temp }}/export/*.ipa
-
-      - name: Clean up keychain
-        if: always()
-        run: |
-          security delete-keychain "$RUNNER_TEMP/build.keychain" || true
-          rm -f ~/Library/MobileDevice/"Provisioning Profiles/profile.mobileprovision" || true
+          name: PitWallAI-${{ steps.version.outputs.version }}-unsigned
+          path: ${{ runner.temp }}/PitWallAI-unsigned.ipa

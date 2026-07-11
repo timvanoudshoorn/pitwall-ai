@@ -9,7 +9,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environment: 'node',
+    // Use jsdom for component/integration tests, node for pure logic
+    environment: 'jsdom',
   },
   resolve: {
     alias: {

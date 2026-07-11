@@ -194,3 +194,36 @@ decision on the AI Explanation backend call site.
   "What's still open" list except the AI Explanation live-API call,
   which remains correctly out of scope (infra decision, not visual's or
   ai's to resolve unilaterally).
+
+## 2026-07-11 (later still) — Code-split routes off the main bundle
+
+- `npm run build` was tripping Vite's 500KB chunk-size warning
+  (729KB/220KB-gzip single `index.js`). Checked whether `@anthropic-ai/sdk`
+  was dead weight in the client bundle first, since `ai.explain()` isn't
+  called from the browser: `src/ai/client.ts` and `src/ai/explain.ts` both
+  only import `Anthropic` as a *type* (`import type Anthropic from
+  '@anthropic-ai/sdk'`), which TypeScript/Vite fully erase at build time —
+  grepped the built `dist/assets/*.js` for `AnthropicError`/`class
+  Anthropic` and found zero matches, confirming the SDK was never actually
+  in the bundle. Not the culprit; no action needed there.
+- The real cost was everything living in one entry chunk regardless of
+  route — Recharts (`DegradationChart`, `GapEvolutionChart`), the full sim
+  engine + data JSON pulled in by `useStrategyComparison`, and ai/'s
+  prompt-builder were all downloaded before a first-time visitor even
+  finishes picking a car class on the landing screen.
+- `src/App.tsx`: converted every screen except
+  `CarClassTrackSelectScreen` (the landing route, kept a static import so
+  first paint has zero waterfall) to `React.lazy()`, wrapped `<Routes>` in
+  a single `<Suspense>` with a new `src/components/layout/RouteFallback.tsx`
+  fallback (terse pit-wall-style "loading" state, not a generic spinner).
+- Result: main entry chunk 729KB -> 276KB (89KB gzip), warning gone.
+  Rollup automatically split Recharts into its own ~345KB `LineChart`
+  chunk (only fetched by Tyre Degradation/Strategy Battle) and the sim
+  engine + data JSON into a ~42KB `useStrategyComparison` chunk (only
+  fetched by the four strategy-consuming screens) — landing screen no
+  longer pays for either.
+- Verified via headless-Chromium against `vite preview` (the actual
+  production build, not dev server): navigated all 8 routes in sequence,
+  zero console errors and zero failed chunk requests — confirms the lazy
+  imports resolve correctly under real HTTP chunk loading, not just in
+  dev's on-demand transform pipeline. `npx tsc --noEmit` clean.

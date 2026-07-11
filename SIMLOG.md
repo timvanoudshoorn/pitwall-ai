@@ -416,6 +416,58 @@ gap starts at 0 and diverges as expected once tyre age/pit timing differ.
 
 ---
 
+## 11. Telemetry import (personal pace recalibration) — `telemetry.ts`
+
+**Approach:** the plan doc's stretch feature ("a telemetry import so a
+user's own lap times recalibrate the pace model to them specifically"),
+picked up 2026-07-11 once the core backlog + gap-evolution addition were
+done and wired in by visual, per the coordinator's explicit go-ahead and
+sizing guidance. Deliberately narrow first-pass scope: `importTelemetry()`
+takes a raw `lapTimesSec: number[]` plus the user's already-selected
+class/tier/track baseline, and returns ONE personal pace offset
+(seconds/lap and percent-off-ultimate-pace) — no personal tyre-wear or
+fuel recalibration in this pass, flagged as a natural v2 rather than
+built now.
+
+**Outlier filtering:** a raw lap log has no metadata for box laps/
+out-laps/traffic/spins/safety-car laps, so laps slower than
+`fastestLap * 1.07` are dropped before taking the **median** of what's
+left as the "representative pace." The 1.07 multiplier reuses F1's real
+107%-qualifying-rule number as a readymade cutoff — explicitly flagged
+PLACEHOLDER methodology (borrowed from a different context, not validated
+against real telemetry logs; a real implementation would use actual
+lap-flag metadata instead of a blanket time cutoff).
+
+**Wiring into strategyCompare.ts:** `RaceSimInput` gained
+`personalPaceOffsetSec?`/`personalPaceConfidence?`, added additively onto
+the existing class-offset term (so class/tier selection isn't replaced,
+just recalibrated around this specific user) and flagged in
+`assumptionsUsed` as `personal_pace_telemetry_applied` +
+`personal_pace_confidence_<level>` when not high-confidence. Reuses
+`resolveCarProfile()` from `performanceTier.ts` for the "what did the
+model expect" baseline rather than duplicating that math.
+
+**Confidence heuristic** (sample-size-based, not a real statistical CI,
+same spirit as `strategyCompare.ts`'s per-candidate confidence field):
+≥15 kept laps = high, ≥5 = medium, else low. Throws if fewer than 3 laps
+are supplied at all — no meaningful "representative pace" claim from 1-2
+laps.
+
+Verified: 10-lap synthetic log (9 consistent ~88.0s laps + one 95.5s
+traffic/mistake outlier) against a midfield F1 2025 90s-baseline track —
+outlier correctly excluded (9 laps kept), representative pace 88.0s,
+personalPaceOffsetSec -2.99s vs the model's 90.99s expectation, medium
+confidence (9 laps). Fed into `compareStrategies()`: a 20-lap race totalled
+59.8s less (20 × -2.99s, exact) with the offset applied vs without —
+confirms the wiring lands exactly as intended, additively, with no
+side-effects on tyre/fuel math.
+
+Messaged `ai` teammate directly (2026-07-11) — they flagged a
+telemetry-aware explanation mode as their backlog item #4, blocked on
+exactly this landing.
+
+---
+
 ## Change log
 
 - **2026-07-09:** Initial build of all 9 backlog items (degradation,
@@ -456,3 +508,8 @@ gap starts at 0 and diverges as expected once tyre age/pit timing differ.
   `activeAeroBenefit(fullThrottlePct?, sourceConfidence?)` in `ers.ts`
   (item 8). `overtakingDifficulty` is ai's field to consume (ReferenceFact
   grounding), not sim's. See items 1, 2, and 8 above for details.
+- **2026-07-11:** Picked up the plan doc's telemetry-import stretch
+  feature (item 11, `telemetry.ts`) per the coordinator's go-ahead now
+  that the core backlog is done end-to-end. Wired `personalPaceOffsetSec`
+  into `strategyCompare.ts`'s `RaceSimInput`. Messaged `ai` directly since
+  it unblocks their backlog item #4.

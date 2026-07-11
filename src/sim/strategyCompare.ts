@@ -71,6 +71,17 @@ export interface RaceSimInput {
    * track-agnostic. See degradation.ts's trackAbrasivenessMultiplier().
    */
   trackAbrasivenessRating?: 1 | 2 | 3 | 4 | 5;
+  /**
+   * Optional personal pace recalibration (seconds/lap) from
+   * `telemetry.ts`'s `importTelemetry().personalPaceOffsetSec` — layered
+   * additively on top of the class+tier offset for THIS specific user,
+   * rather than replacing the class/tier selection. Omit to use the
+   * unmodified class/tier model, same as before this field existed.
+   * Resolved 2026-07-11, see SIMLOG.md #11.
+   */
+  personalPaceOffsetSec?: number;
+  /** Confidence tag for `personalPaceOffsetSec`, propagated into assumptionsUsed — see telemetry.ts's sample-size-based confidence heuristic. */
+  personalPaceConfidence?: 'high' | 'medium' | 'low';
   fuelOptions?: FuelOptions;
   strategies: StrategyPlan[];
 }
@@ -97,7 +108,14 @@ export function compareStrategies(input: RaceSimInput): StrategyComparison {
   // Tier gap is percent-off-ultimate-pace (scales with track length), converted to seconds for
   // THIS track's baseLapTimeSec; class gap (e.g. F2 vs F1) stays flat seconds. See SIMLOG.md #9.
   const tierOffset = baseLapTimeSec * tierParams.paceOffsetPct * classParams.tierPaceRangeScale;
-  const classOffset = classParams.basePaceOffsetSec;
+  let classOffset = classParams.basePaceOffsetSec;
+  if (input.personalPaceOffsetSec !== undefined) {
+    classOffset += input.personalPaceOffsetSec;
+    globalFlags.add('personal_pace_telemetry_applied');
+    if (input.personalPaceConfidence && input.personalPaceConfidence !== 'high') {
+      globalFlags.add(`personal_pace_confidence_${input.personalPaceConfidence}`);
+    }
+  }
 
   const evaluated = input.strategies.map((plan) =>
     evaluateStrategy(plan, {

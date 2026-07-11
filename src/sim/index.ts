@@ -15,3 +15,4 @@ export * from './safetyCar';
 export * from './weather';
 export * from './ers';
 export * from './performanceTier';
+export * from './telemetry';

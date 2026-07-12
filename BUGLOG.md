@@ -295,3 +295,49 @@ Installed @testing-library/react, @testing-library/dom, jsdom. Updated vitest.co
 | **Total** | **180** | **All highest-value, most-bug-prone paths covered** |
 
 **Infrastructure Complete:** This is the last major gap. All code paths that have been hand-verified during development now have automated regression coverage. Future commits can use `npm run test` to catch drifts in minutes instead of hours of manual re-verification.
+
+---
+
+## Screenshot Verification: Full-Page Capture (2026-07-12)
+
+**Previous Issue Identified:** Visual's screenshot-verification technique was broken all session — fullPage screenshots were capturing only above-the-fold content, silently clipping anything below the scroll line. This affected earlier verification claims ("verified via headless-Chromium, zero issues").
+
+**Corrected Verification: COMPLETE ✓**
+
+Built proper full-page screenshot verification using Playwright's ability to measure actual scroll dimensions vs viewport. Spot-checked all 8 screens on desktop (1440x900) and mobile (375x667).
+
+**Desktop Verification (1440x900):**
+- All 8 screens: 900px height (fits viewport, no scrolling needed)
+- No clipping issues detected
+- All UI elements accessible without scroll
+
+**Mobile Verification (375x667):**
+- CarClassTrackSelectScreen: Main content scrollable (scrollHeight=3386px, clientHeight=594px)
+- TierDial Status: Off-screen initially, but reachable by scrolling
+  - Position after full scroll: top=73px, bottom=667px (fully visible in viewport)
+  - Not a blocker (functional), but requires ~2792px scroll distance to reach
+  - UX note: Heavy content density on mobile (Car Class grid 4x2, TierDial below) pushes TierDial far down page
+
+**Specific TierDial Check:**
+- Desktop: Visible, accessible ✓
+- Mobile: Off-screen initially, but scrollable to ✓
+- Not permanently clipped (dismisses visual's clipping concern)
+- Slightly tight on mobile (lots of content above), but not broken
+
+**Verified Screens:**
+1. CarClassTrackSelect: ✓ (TierDial reachable via scroll on mobile)
+2. RaceParameters: ✓
+3. StrategyComparison: ✓
+4. TyreDegradation: ✓
+5. PitWindow: ✓
+6. StrategyBattle: ✓
+7. Settings: ✓
+8. AIExplanation: ✓
+
+**Key Findings:**
+- No permanently clipped content on any screen
+- All 8 screens render fully without console errors
+- Mobile reflow works correctly (scrollable when needed)
+- TierDial is functional on mobile (not a bug, just off-screen initially)
+
+**Automated Test Coverage Note:** The 180 Vitest tests are unaffected by screenshot methodology (they test logic/math/adapter, not screenshots). Screenshot verification was purely for visual/layout validation and has been re-done with correct full-page capture.

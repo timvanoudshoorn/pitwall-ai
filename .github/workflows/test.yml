@@ -1,0 +1,8 @@
+name: Test Workflow 3
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: macos-14
+    steps:
+      - run: echo "hello"

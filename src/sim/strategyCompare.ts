@@ -89,12 +89,28 @@ export interface RaceSimInput {
 const DEFAULT_BASE_LAP_TIME_SEC = 90; // PLACEHOLDER generic track, see SIMLOG.md #5
 const CLOSE_CALL_THRESHOLD_SEC = 2.0; // PLACEHOLDER — under this margin, flag as a close call, see SIMLOG.md #5
 
-export function compareStrategies(input: RaceSimInput): StrategyComparison {
-  const globalFlags = new Set<string>();
+interface ResolvedRaceContext {
+  baseLapTimeSec: number;
+  degOptions: DegradationOptions;
+  tierOffset: number;
+  classOffset: number;
+  contextFlags: string[];
+}
+
+/**
+ * Resolves the shared (per-race, not per-strategy) inputs — baseLapTimeSec
+ * fallback/confidence, tier/class pace offsets, personal-pace telemetry
+ * recalibration — once, so `compareStrategies()` (many candidates) and
+ * `evaluateSingleStrategy()` (one candidate, see below) can never resolve
+ * these differently and quietly disagree. Same "share the exact math"
+ * principle as `perLapStrategyTrace()`.
+ */
+function resolveRaceContext(input: Omit<RaceSimInput, 'strategies'>): ResolvedRaceContext {
+  const flags: string[] = [];
   if (input.baseLapTimeSec === undefined) {
-    globalFlags.add('base_lap_time_generic_placeholder');
+    flags.push('base_lap_time_generic_placeholder');
   } else if (input.baseLapTimeSourceConfidence && input.baseLapTimeSourceConfidence !== 'confirmed') {
-    globalFlags.add(`base_lap_time_source_confidence_${input.baseLapTimeSourceConfidence}`);
+    flags.push(`base_lap_time_source_confidence_${input.baseLapTimeSourceConfidence}`);
   }
   const baseLapTimeSec = input.baseLapTimeSec ?? DEFAULT_BASE_LAP_TIME_SEC;
 
@@ -111,11 +127,20 @@ export function compareStrategies(input: RaceSimInput): StrategyComparison {
   let classOffset = classParams.basePaceOffsetSec;
   if (input.personalPaceOffsetSec !== undefined) {
     classOffset += input.personalPaceOffsetSec;
-    globalFlags.add('personal_pace_telemetry_applied');
+    flags.push('personal_pace_telemetry_applied');
     if (input.personalPaceConfidence && input.personalPaceConfidence !== 'high') {
-      globalFlags.add(`personal_pace_confidence_${input.personalPaceConfidence}`);
+      flags.push(`personal_pace_confidence_${input.personalPaceConfidence}`);
     }
   }
+
+  return { baseLapTimeSec, degOptions, tierOffset, classOffset, contextFlags: flags };
+}
+
+export function compareStrategies(input: RaceSimInput): StrategyComparison {
+  const globalFlags = new Set<string>();
+  const { baseLapTimeSec, degOptions, tierOffset, classOffset, contextFlags } =
+    resolveRaceContext(input);
+  contextFlags.forEach((f) => globalFlags.add(f));
 
   const evaluated = input.strategies.map((plan) =>
     evaluateStrategy(plan, {
@@ -126,7 +151,6 @@ export function compareStrategies(input: RaceSimInput): StrategyComparison {
       pitLossSec: input.pitLossSec,
       degOptions,
       fuelOptions: input.fuelOptions ?? {},
-      globalFlags,
     }),
   );
 
@@ -294,7 +318,6 @@ function evaluateStrategy(
     pitLossSec: number;
     degOptions: DegradationOptions;
     fuelOptions: FuelOptions;
-    globalFlags: Set<string>;
   },
 ): EvaluatedStrategy {
   const trace = perLapStrategyTrace(plan, {
@@ -324,6 +347,73 @@ function evaluateStrategy(
     confidence,
     assumptionFlags: [...flags],
     plannedLapsSum,
+  };
+}
+
+export interface SingleStrategyEvaluation {
+  id: string;
+  numStops: number;
+  stints: Stint[];
+  pitStops: PitStop[];
+  predictedTotalRaceTimeSeconds: number;
+  confidence: 'high' | 'medium' | 'low';
+  assumptionFlags: string[];
+}
+
+/**
+ * Evaluates ONE strategy plan against a race context and returns its
+ * predicted total race time — the fast, single-plan counterpart to
+ * `compareStrategies()` for an interactive "what-if" editor (adjust pit
+ * lap / compound choices, see the predicted time update live on every
+ * change). Paying for a full multi-candidate comparison + ranking +
+ * margin analysis on every keystroke would be the wrong shape (there's no
+ * "best"/`marginAnalysis` concept for a single edited plan) even though
+ * it wouldn't be meaningfully slower — this exists for API clarity, not
+ * because `compareStrategies({ strategies: [plan] })` is too slow.
+ *
+ * Shares the exact same tier/class/personal-pace resolution
+ * (`resolveRaceContext()`) and per-lap trace (`perLapStrategyTrace()`)
+ * `compareStrategies()` uses, so a live editor's numbers can never drift
+ * from the full comparison screen's numbers for the same inputs — same
+ * principle as `raceGapEvolution.ts` reusing `perLapStrategyTrace()`.
+ *
+ * To show a delta (e.g. "+3.4s vs your last saved strategy"), call this
+ * once per plan being compared and subtract `predictedTotalRaceTimeSeconds`
+ * yourself — this function intentionally doesn't own "vs what" framing,
+ * since that's UI state (vs the recommended candidate? vs the plan before
+ * this edit? vs a rival's known strategy?), not a math question. See
+ * SIMLOG.md #14.
+ */
+export function evaluateSingleStrategy(
+  plan: StrategyPlan,
+  input: Omit<RaceSimInput, 'strategies'>,
+): SingleStrategyEvaluation {
+  const { baseLapTimeSec, degOptions, tierOffset, classOffset, contextFlags } =
+    resolveRaceContext(input);
+
+  const evaluated = evaluateStrategy(plan, {
+    totalLaps: input.totalLaps,
+    baseLapTimeSec,
+    tierOffset,
+    classOffset,
+    pitLossSec: input.pitLossSec,
+    degOptions,
+    fuelOptions: input.fuelOptions ?? {},
+  });
+
+  const allFlags = new Set([...contextFlags, ...evaluated.assumptionFlags]);
+  if (evaluated.plannedLapsSum !== input.totalLaps) {
+    allFlags.add(`strategy_${plan.id}_stint_laps_do_not_sum_to_race_distance`);
+  }
+
+  return {
+    id: evaluated.id,
+    numStops: evaluated.numStops,
+    stints: evaluated.stints,
+    pitStops: evaluated.pitStops,
+    predictedTotalRaceTimeSeconds: evaluated.predictedTotalRaceTimeSeconds,
+    confidence: evaluated.confidence,
+    assumptionFlags: [...allFlags].sort(),
   };
 }
 

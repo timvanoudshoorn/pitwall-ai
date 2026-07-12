@@ -533,6 +533,115 @@ backward-compatible, matches pre-existing behavior when omitted).
 
 ---
 
+## 13. Stop-count plausibility — `stopCountPlausibility.ts`
+
+**Correctness bug found by coordinator (2026-07-12):** `strategyCandidates.ts`
+(visual's file, `src/lib/`) unconditionally generated 1/2/3-stop candidates
+regardless of race distance. For a 25%- or 35%-distance race, pit-stop
+time loss (~18-22s per stop) dominates over any tyre-degradation savings
+at that short a distance, so a 2-stop is essentially never competitive and
+a 3-stop is absurd — but the app was showing them as if they were live
+options every time, misrepresenting what a real strategist would even
+consider.
+
+**Model:** `plausibleStopCounts(totalLaps, degOptions?, maxStopCountToConsider?)`
+returns a plausibility verdict per stop count (1..3 by default) BEFORE any
+candidate is generated — a cheap pre-filter, not a run of
+`compareStrategies()`. Two floors, applied per stop count:
+
+1. **Hard floor (`MIN_VIABLE_STINT_LAPS = 5`, PLACEHOLDER):** applies to
+   every stop count including 1-stop — an average stint below this isn't
+   a real strategic choice, it doesn't even clear tyre warmup
+   (`degradation.ts`'s `warmupLaps`, 1-3 laps/compound) plus a handful of
+   representative racing laps.
+2. **Economic floor (`CLIFF_MARGIN_FRACTION = 0.5`, PLACEHOLDER):**
+   applies only to stop counts beyond the first (1-stop is always the
+   baseline once it clears floor #1 — some minimum strategy is the
+   default case, not something to filter away). Requires the average
+   stint length be at least half of the medium compound's
+   tier/class/track-adjusted cliff lap (via `estimateTyreLife()`) — below
+   that, the stint would never have reached the steep post-cliff wear
+   phase anyway, so splitting further just pays `pitLossSec` again for no
+   real degradation benefit. Medium is used as a "representative race
+   compound" for this planning-level threshold, not a claim every
+   candidate must run medium.
+
+Both constants are PLACEHOLDER (qualitatively sound, not calibrated to
+real strategy data) but the mechanism is real: `cliffLapEstimate` already
+factors in carClass/performanceTier/trackAbrasivenessRating via the
+existing `estimateTyreLife()` model, so e.g. a high-wear car/track
+combination naturally supports relatively more stops at a given race
+distance than a low-wear one — an emergent property of reusing sim's own
+degradation model rather than a distance-only lookup table.
+
+**Verified** (60-lap full-distance baseline, no track/class/tier
+adjustment): 25% (15 laps) → only 1-stop plausible; 35% (21 laps) → only
+1-stop; 50% (30 laps) → only 1-stop; 75% (45 laps) → 1-stop and 2-stop;
+100% (60 laps) → all of 1/2/3-stop. Matches the coordinator's stated
+expectation exactly (2-stop essentially never optimal and 3-stop absurd
+at 25%/35%) while leaving full-distance races unaffected.
+
+**Ownership/wiring:** built as an exported sim function per the
+coordinator's split ("the reasoning/thresholds should be yours, wired in
+with their help") — did not edit `strategyCandidates.ts` myself
+(visual-owned, `src/lib/`). Messaged visual with the exact integration:
+call `plausibleStopCountNumbers(totalLaps, degOptions)` and filter
+`CANDIDATE_SEQUENCES` down to sequences whose stop count (compounds.length
+- 1) is in that list, before generating stints.
+
+---
+
+## 14. Single-strategy evaluator — `evaluateSingleStrategy()`
+
+**New feature (coordinator, 2026-07-12):** an interactive "what-if"
+strategy editor — user adjusts pit lap/compound choices on a single
+strategy and sees a live predicted-laptime delta as they type — needs a
+fast single-plan evaluator, not `compareStrategies()`'s multi-candidate
+ranking/margin-analysis shape.
+
+**Design decision:** rather than a new lightweight model, extracted the
+exact per-candidate logic `compareStrategies()` already runs into a
+standalone exported function, `evaluateSingleStrategy(plan, input)` where
+`input` is `Omit<RaceSimInput, 'strategies'>` (same race context, minus
+the array). Refactored the shared tier/class/personal-pace-offset/
+baseLapTime resolution (previously inlined at the top of
+`compareStrategies()`) into `resolveRaceContext()`, called by both
+`compareStrategies()` and `evaluateSingleStrategy()` — so a live editor's
+number for a given plan can never drift from what the same plan would
+score inside a full comparison. Same "share the exact math, don't
+re-derive it" principle already used for `perLapStrategyTrace()`
+(`raceGapEvolution.ts`) and now applied one level up.
+
+Returns `{ id, numStops, stints, pitStops, predictedTotalRaceTimeSeconds,
+confidence, assumptionFlags }` — everything a `StrategyCandidate` has
+except `deltaToBestSeconds` (no "best" concept for a single plan).
+**Delta framing is explicitly NOT this function's job** — the doc comment
+spells out why: "vs the recommended candidate," "vs the plan before this
+edit," and "vs a rival's known strategy" are all valid UI framings for
+different moments in an editing flow, and picking one would bake a UI
+decision into sim. The caller calls this once per plan being compared and
+subtracts `predictedTotalRaceTimeSeconds` themselves.
+
+**Performance note:** did NOT build this because
+`compareStrategies({ strategies: [plan] })` was too slow — a full-race
+lap-by-lap loop is on the order of tens of iterations, sub-millisecond in
+practice. This exists for API shape/clarity (no meaningless "best of one"
+ranking or margin analysis in the return type), not a performance
+optimization.
+
+**Verified:** `evaluateSingleStrategy(plan, ctx)` and
+`compareStrategies({ ...ctx, strategies: [plan] }).strategies[0]` produce
+byte-identical `predictedTotalRaceTimeSeconds`/`confidence` for the same
+plan and context (20-lap test case, both 1879.071s / `low` confidence) —
+confirms the refactor didn't introduce any drift between the two call
+paths. Full existing vitest suite (180 tests across 8 files) still passes
+after the `resolveRaceContext()` refactor.
+
+**Not yet done:** messaging `visual` with this API shape so they can
+design the interactive editor UI against it — next step, see change log.
+
+---
+
 ## Change log
 
 - **2026-07-09:** Initial build of all 9 backlog items (degradation,
@@ -586,3 +695,13 @@ backward-compatible, matches pre-existing behavior when omitted).
   probability for a more/less scattered starting grid. Messaged `visual`
   to wire it in from `raceSimAdapter.ts` (visual-owned file, not edited
   directly).
+- **2026-07-12:** Two coordinator-flagged items, both addressed same day.
+  Item 13: `stopCountPlausibility.ts` — fixes a correctness bug where
+  short-distance races (25%/35%) showed implausible 2-/3-stop candidates;
+  built `plausibleStopCounts()`/`plausibleStopCountNumbers()`, messaged
+  visual to filter `strategyCandidates.ts` through it. Item 14: new
+  `evaluateSingleStrategy()` in `strategyCompare.ts` — a single-plan
+  evaluator for an interactive strategy editor, sharing the newly
+  extracted `resolveRaceContext()` helper with `compareStrategies()` so
+  the two can't drift. Full vitest suite (180 tests) still green after
+  the refactor.

@@ -16,3 +16,4 @@ export * from './weather';
 export * from './ers';
 export * from './performanceTier';
 export * from './telemetry';
+export * from './stopCountPlausibility';

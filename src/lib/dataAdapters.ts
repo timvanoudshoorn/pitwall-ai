@@ -44,10 +44,23 @@ function shortNameFor(id: CarClassKey): string {
   }
 }
 
-/** First sentence only — data's descriptions are research prose, cards need a pit-wall-terse line. Full text still lives in data/car-classes.json for anything that wants it. */
+/**
+ * First clause only — data's descriptions are research prose, cards need a
+ * pit-wall-terse line. Breaks on the first `.`/`!`/`?`/`;`, not just
+ * sentence-ending punctuation: several source descriptions (e.g. F2's
+ * "F1 25 includes F2 as a class; the real-world championship has run a
+ * single chassis...") use a semicolon before their first real
+ * sentence-ending period, so a period-only match was pulling in the
+ * entire run-on clause — the opposite of "terse." Found while shrinking
+ * mobile card height for CarClassTrackSelectScreen (2026-07-12): this
+ * was the biggest single contributor to how tall the Car Class grid ran
+ * on a narrow viewport, pushing the Performance Tier dial further down
+ * the page than it needed to be. Full text still lives in
+ * data/car-classes.json for anything that wants it.
+ */
 function firstSentence(text: string): string {
-  const match = text.match(/^.*?[.!?](?=\s|$)/);
-  return (match ? match[0] : text).trim();
+  const match = text.match(/^.*?[.!?;](?=\s|$)/);
+  return (match ? match[0] : text).replace(/;$/, '.').trim();
 }
 
 export const CAR_CLASSES: CarClassMeta[] = carClassesData.classes

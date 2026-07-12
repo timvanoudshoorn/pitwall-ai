@@ -431,3 +431,59 @@ Two compounding problems, one bug and one methodology gap:
   component CLAUDE.md explicitly protects ("don't regress it back to a
   dropdown") on a hunch. Flagging as a possible follow-up if the user
   still sees an issue there specifically, rather than guessing at a fix.
+
+## 2026-07-12 (later) — TierDial mobile-depth investigation: corrected a measurement, then fixed the real (smaller) issue anyway
+
+bugs re-verified the mobile fix above and flagged a follow-up: on
+`CarClassTrackSelectScreen`, the `TierDial` supposedly sat ~2792px down
+the page at 375px width — "not clipped, but arguably buried" against
+CLAUDE.md's "feel tactile and immediate... not a buried settings toggle"
+mandate for that exact component. Investigated rather than took the
+number at face value (same discipline as the race-length fix above):
+
+- **The 2792px figure doesn't reproduce.** Measured the live page
+  directly via Playwright `getBoundingClientRect()` (not a screenshot —
+  a hard DOM measurement, immune to any of this session's earlier
+  screenshot-truncation issues) on the current build at 375px width: the
+  `TierDial` sat at **y=943px**, not 2792px, out of a ~3447px-tall page.
+  Cross-checked with a properly-full-page screenshot (same corrected
+  capture technique from the prior entry) — visually confirms the same
+  position. Best read of the discrepancy: BUGLOG's own methodology note
+  says they computed it as `scrollHeight (3386) - clientHeight (594) =
+  2792` — that's the page's *total* remaining scroll distance from the
+  top (dominated by the long Track grid, which sits *below* the dial,
+  not above it), not the dial's own offset from the top. Reported this
+  back to bugs directly so it doesn't propagate into other BUGLOG
+  findings that used the same method.
+- **943px still isn't nothing, and the underlying concern was fair even
+  at the corrected number** — CLAUDE.md's "immediate" bar is a real
+  design intent, and requiring a full screen-height-plus of scroll past
+  the Car Class grid before reaching a component explicitly designed to
+  feel tactile is worth tightening regardless of whether the original
+  number was right. Chose NOT to reorder the three setup panels
+  (Car Class / Performance Tier / Track) via CSS `order` on mobile only
+  — that would desync the "Setup 1/2/3 of 3" labels from their visual
+  position and trade one confusing thing for another. Instead found and
+  fixed what was actually making the Car Class panel unnecessarily tall:
+  `dataAdapters.ts`'s `firstSentence()` truncation (meant to give each
+  card a "pit-wall-terse line") only broke on `.`/`!`/`?`, so a
+  description using a semicolon before its first real sentence-ending
+  period (F2's "F1 25 includes F2 as a class; the real-world
+  championship has run a single chassis..." — semicolon, not period,
+  right after the useful part) sailed straight through untruncated,
+  rendering as a multi-line paragraph on every car-class card. Fixed the
+  regex to also break on `;`. Added `line-clamp-3 sm:line-clamp-none` on
+  the card description as a hard backstop for any future source text
+  that still runs long (full text still available via a `title`
+  tooltip), independent of whether the regex catches it.
+- Result, re-measured the same way: `TierDial` now at **y=610px**
+  (down from 943px), total page height 3053px (down from 3447px) — on a
+  typical ~812px-tall phone viewport that's now visible at or near the
+  very first screen, not "buried." This is a genuine, verified
+  improvement, not a fix for the originally-reported (unreproducible)
+  number — and it improves the same cards on desktop too (F2's card now
+  reads "F1 25 includes F2 as a class." instead of a paragraph), so
+  there's no viewport-specific tradeoff here at all.
+- Verified zero console errors across all 8 routes at both 1400x1000 and
+  375x812 on the rebuilt app. `npx tsc --noEmit` and `npm run build`
+  both clean, no chunk-size regression.

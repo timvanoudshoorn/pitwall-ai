@@ -33,7 +33,10 @@ export function CarClassTrackSelectScreen({ selection, onChange }: CarClassTrack
                 <div className={`text-sm font-bold ${isActive ? 'text-pit-accent' : 'text-pit-text'}`}>
                   {c.shortName}
                 </div>
-                <div className="mt-1 text-[11px] leading-snug text-pit-text-secondary">{c.description}</div>
+                {/* line-clamp caps card height on mobile regardless of description length — a hard backstop on top of dataAdapters.ts's firstSentence() truncation, not a replacement for it (full text still available via the title attribute). */}
+                <div className="mt-1 line-clamp-3 text-[11px] leading-snug text-pit-text-secondary sm:line-clamp-none" title={c.description}>
+                  {c.description}
+                </div>
               </button>
             );
           })}

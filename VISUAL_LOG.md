@@ -540,3 +540,58 @@ screen.
 - Left `src/sim/strategyCompare.ts` (modified) and
   `src/sim/stopCountPlausibility.ts`/`test_sim_direct.mjs` (untracked) alone
   in the working tree — sim's in-progress work, not mine to stage or touch.
+
+## 2026-07-12 (later still) — Wired stop-count plausibility + built the interactive strategy editor
+
+Two coordinator-flagged items from sim's commit 34b8f1f (SIMLOG.md #13-14),
+picked up mid-screenshot-task per the coordinator's explicit
+"address before completing your current task."
+
+- **Stop-count plausibility filter.** `src/lib/strategyCandidates.ts`
+  (visual-owned) previously generated 1/2/3-stop candidates unconditionally
+  regardless of race distance — sim built the reasoning
+  (`stopCountPlausibility.ts`'s `plausibleStopCountNumbers()`) but flagged
+  it as visual's wiring to do. `buildStrategyCandidates()` now takes an
+  optional `DegradationOptions` (carClass/tier/trackAbrasivenessRating) and
+  filters `CANDIDATE_SEQUENCES` down to only the stop counts sim's function
+  flags as economically plausible for this distance/car/track before
+  generating any stints. `raceSimAdapter.ts`'s two call sites
+  (`buildStrategyComparison()`, `buildGapEvolution()`) now pass the real
+  context through. Verified two ways: a headless-Chromium pass showing
+  Silverstone at 25% race length now renders only a 1-Stop candidate
+  (previously showed an absurd 3-stop) while 100% still shows all three;
+  and the existing `raceSimAdapter.test.ts` suite already had matching
+  expectations updated externally (Monza's low abrasiveness now caps out
+  at 2-stop even at full distance) — all 179 vitest tests green.
+- **Interactive strategy editor.** New `src/components/ui/CustomStrategyEditor.tsx`
+  + `src/lib/useCustomStrategy.ts`, added to `StrategyComparisonScreen`
+  below the standard candidate grid. Lets the user build their own stint
+  sequence (compound toggle chips per stint, a range slider for planned
+  laps, add/remove stint buttons) and see sim's real predicted race time
+  update live via `evaluateSingleStrategy()` (SIMLOG.md #14), reached
+  through a new `evaluateCustomStrategy()`/`resolveTotalLaps()` pair in
+  `raceSimAdapter.ts` that mirrors `buildStrategyComparison()`'s context
+  resolution so this can't drift from the headline numbers. Delta is
+  always shown against the currently recommended standard candidate (one
+  clear reference point, since sim's doc comment explicitly leaves
+  "vs what" to the caller) — good/warning `StatusBadge` by sign, plus a
+  laps-planned-vs-race-distance readout that warns if a custom plan
+  doesn't sum to the full race distance yet. Verified via headless-Chromium:
+  panel renders, compound toggle click updates the live delta with zero
+  console errors, laps-planned counter matches the selection's actual
+  total laps (13/13 at 25% Silverstone, 52/52 at 100%).
+- **Coordinated apxgp removal with data/sim** (data's commit 090bdfd,
+  concurrent with this work — confirmed APXGP is cosmetically-skinned
+  standard My Team content, not a distinct class, folded into
+  `f1_2025.teams`). Found `dataAdapters.ts`'s `DATA_ID_TO_CAR_CLASS_KEY`
+  map and `raceSimAdapter.ts`'s `CAR_CLASS_TO_DATA_ID` map already updated
+  in the working tree by the time I got to them (coordinator/data had
+  landed the rename directly) — the one piece actually left for visual was
+  `dataAdapters.ts`'s `tierSliderApplies`, which data's same commit
+  upgraded from an implicit "always true" to a real per-class field in
+  `car-classes.json` (researching, and explicitly NOT confirming, a
+  user-flagged claim that F1 World should have zero tier variance).
+  `CAR_CLASSES` now reads `c.tierSliderApplies` off the real data instead
+  of visual hardcoding `true` for every class.
+- `npx tsc --noEmit`, `npm run build` (main chunk 303KB, no chunk-size
+  regression), and the full vitest suite (179 tests) all clean/green.

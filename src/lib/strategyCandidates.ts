@@ -12,7 +12,8 @@
  * smarter (e.g. accounting for an actual undercut-window search).
  * -----------------------------------------------------------------------
  */
-import { TYRE_COMPOUNDS } from '../sim/constants';
+import { TYRE_COMPOUNDS, plausibleStopCountNumbers } from '../sim';
+import type { DegradationOptions } from '../sim';
 import type { TyreCompound } from '../ai/types';
 import type { StrategyPlan, StintPlan } from '../sim/strategyCompare';
 
@@ -50,10 +51,22 @@ function splitLapsByTyreLife(totalLaps: number, compounds: TyreCompound[]): Stin
 /**
  * Builds the standard 1/2/3-stop candidate set for a given race distance.
  * Drops any candidate whose stint count exceeds totalLaps (degenerate on
- * very short sprint-length races).
+ * very short sprint-length races), AND any whose stop count sim's
+ * `plausibleStopCountNumbers()` (src/sim/stopCountPlausibility.ts) flags as
+ * not economically viable at this distance — e.g. a 25%/35%-length race
+ * pays a pit stop's fixed time cost without a stint long enough to recoup
+ * it, so a 2-/3-stop candidate would otherwise show up as if it were a
+ * real option (SIMLOG.md #13, coordinator-flagged correctness bug). Pass
+ * `degOptions` (carClass/performanceTier/trackAbrasivenessRating) when the
+ * caller has them in scope for a more accurate cliff-lap threshold — sim's
+ * function degrades gracefully to the medium-compound baseline without
+ * them.
  */
-export function buildStrategyCandidates(totalLaps: number): StrategyPlan[] {
-  return CANDIDATE_SEQUENCES.filter((seq) => seq.compounds.length <= totalLaps).map((seq) => ({
+export function buildStrategyCandidates(totalLaps: number, degOptions: DegradationOptions = {}): StrategyPlan[] {
+  const allowedStopCounts = plausibleStopCountNumbers(totalLaps, degOptions);
+  return CANDIDATE_SEQUENCES.filter(
+    (seq) => seq.compounds.length <= totalLaps && allowedStopCounts.includes(seq.compounds.length - 1),
+  ).map((seq) => ({
     id: seq.id,
     stints: splitLapsByTyreLife(totalLaps, seq.compounds),
   }));

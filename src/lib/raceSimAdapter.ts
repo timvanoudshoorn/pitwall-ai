@@ -30,6 +30,7 @@
  */
 import {
   compareStrategies,
+  evaluateSingleStrategy,
   pitStopLoss,
   safetyCarProbability,
   raceGapEvolution,
@@ -37,6 +38,8 @@ import {
   type RaceSimInput,
   type GapEvolutionResult,
   type TelemetryImportResult,
+  type StrategyPlan,
+  type SingleStrategyEvaluation,
 } from '../sim';
 import type { CarClassKey, PerformanceTierKey } from '../sim/constants';
 import type { StrategyComparison } from '../ai/types';
@@ -51,7 +54,6 @@ const CAR_CLASS_TO_DATA_ID: Record<CarClassKey, string> = {
   f1_2025: 'f1_2025',
   f1_2026_season_pack: 'f1_2026',
   f2: 'f2',
-  apxgp: 'apxgp',
   f1_world: 'f1_world_car',
 };
 
@@ -228,7 +230,11 @@ export function buildStrategyComparison(selection: AppSelection): StrategyCompar
     trackAbrasivenessRating: ctx.trackAbrasivenessRating,
     personalPaceOffsetSec: telemetry?.personalPaceOffsetSec,
     personalPaceConfidence: telemetry?.confidence,
-    strategies: buildStrategyCandidates(ctx.totalLaps),
+    strategies: buildStrategyCandidates(ctx.totalLaps, {
+      carClass: ctx.carClassId,
+      performanceTier: ctx.performanceTier,
+      trackAbrasivenessRating: ctx.trackAbrasivenessRating,
+    }),
   };
 
   return compareStrategies(input);
@@ -249,7 +255,11 @@ export function buildGapEvolution(
   candidateBId: string,
 ): GapEvolutionResult {
   const ctx = resolveRaceSimContext(selection);
-  const candidates = buildStrategyCandidates(ctx.totalLaps);
+  const candidates = buildStrategyCandidates(ctx.totalLaps, {
+    carClass: ctx.carClassId,
+    performanceTier: ctx.performanceTier,
+    trackAbrasivenessRating: ctx.trackAbrasivenessRating,
+  });
   const candidateA = candidates.find((c) => c.id === candidateAId);
   const candidateB = candidates.find((c) => c.id === candidateBId);
   if (!candidateA || !candidateB) {
@@ -268,6 +278,46 @@ export function buildGapEvolution(
       trackAbrasivenessRating: ctx.trackAbrasivenessRating,
     },
   });
+}
+
+/**
+ * Evaluates ONE user-edited strategy plan (custom stint/compound/lap
+ * choices from the interactive strategy editor) against the current
+ * selection's real race context, via sim's `evaluateSingleStrategy()` —
+ * the same `resolveRaceContext()`/per-lap math `compareStrategies()` uses,
+ * so a live "what-if" edit can never drift from the headline numbers shown
+ * on Strategy Comparison for the same selection. See SIMLOG.md #14.
+ *
+ * Deliberately mirrors `buildStrategyComparison()`'s input-building (same
+ * ctx/telemetry resolution) rather than sharing a single RaceSimInput
+ * object, since this only needs the `strategies`-less subset.
+ */
+export function evaluateCustomStrategy(selection: AppSelection, plan: StrategyPlan): SingleStrategyEvaluation {
+  const ctx = resolveRaceSimContext(selection);
+  const telemetry = resolveTelemetryContext(selection);
+
+  const input: Omit<RaceSimInput, 'strategies'> = {
+    trackId: ctx.trackEntry.id,
+    trackName: ctx.trackEntry.name,
+    totalLaps: ctx.totalLaps,
+    carClass: ctx.carClassId,
+    performanceTier: ctx.performanceTier,
+    weather: ctx.weather,
+    safetyCarProbabilityPct: ctx.safetyCarProbabilityPct,
+    pitLossSec: ctx.pitLossSec,
+    baseLapTimeSec: ctx.baseLapTimeSec,
+    baseLapTimeSourceConfidence: ctx.baseLapTimeSourceConfidence,
+    trackAbrasivenessRating: ctx.trackAbrasivenessRating,
+    personalPaceOffsetSec: telemetry?.personalPaceOffsetSec,
+    personalPaceConfidence: telemetry?.confidence,
+  };
+
+  return evaluateSingleStrategy(plan, input);
+}
+
+/** Total laps for the current selection's race distance — the editor needs this to validate a custom plan's stints sum correctly, without duplicating resolveRaceSimContext's track/distance lookup. */
+export function resolveTotalLaps(selection: AppSelection): number {
+  return resolveRaceSimContext(selection).totalLaps;
 }
 
 export { CAR_CLASS_TO_DATA_ID };

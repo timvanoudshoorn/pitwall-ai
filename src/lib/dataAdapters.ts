@@ -21,11 +21,18 @@ import type { CarClassMeta, TrackMeta } from '../types/session';
 import type { CarClassKey } from '../sim/constants';
 import { getTrackLapReference } from './trackLapReference';
 
+/**
+ * CORRECTION (2026-07-12, per data teammate's verification of a
+ * user-flagged claim): APXGP is confirmed to be mechanically just the
+ * standard My Team car with a livery skin, not a distinct chassis/class —
+ * folded into `f1_2025.teams` in data's car-classes.json (commit
+ * 090bdfd), same treatment as Konnersport. Removed from `CarClassKey`
+ * (src/sim/constants.ts) and this id map entirely.
+ */
 const DATA_ID_TO_CAR_CLASS_KEY: Record<string, CarClassKey> = {
   f1_2025: 'f1_2025',
   f1_2026: 'f1_2026_season_pack',
   f2: 'f2',
-  apxgp: 'apxgp',
   f1_world_car: 'f1_world',
 };
 
@@ -37,8 +44,6 @@ function shortNameFor(id: CarClassKey): string {
       return 'F1 2026';
     case 'f2':
       return 'F2';
-    case 'apxgp':
-      return 'APXGP';
     case 'f1_world':
       return 'F1 World';
   }
@@ -72,7 +77,12 @@ export const CAR_CLASSES: CarClassMeta[] = carClassesData.classes
       name: c.name,
       shortName: shortNameFor(id),
       description: firstSentence(c.description),
-      tierSliderApplies: true,
+      // data now publishes this per-class (2026-07-12, investigated a
+      // user-flagged claim that F1 World should have zero tier variance —
+      // NOT confirmed, see f1_world_car.tierSliderAppliesResearch2026_07_12
+      // in car-classes.json) rather than visual hardcoding `true` for
+      // every class. Falls back to true for any class missing the field.
+      tierSliderApplies: 'tierSliderApplies' in c ? Boolean(c.tierSliderApplies) : true,
     };
   })
   .filter((c): c is CarClassMeta => c !== null);

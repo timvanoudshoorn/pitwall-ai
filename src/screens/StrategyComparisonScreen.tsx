@@ -3,6 +3,7 @@ import { Panel } from '../components/ui/Panel';
 import { CompoundChip } from '../components/ui/CompoundChip';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { NoComparisonNotice } from '../components/ui/NoComparisonNotice';
+import { CustomStrategyEditor } from '../components/ui/CustomStrategyEditor';
 import { useStrategyComparison } from '../lib/useStrategyComparison';
 import type { AppSelection } from '../types/session';
 import type { StrategyCandidate } from '../ai/types';
@@ -45,6 +46,7 @@ export function StrategyComparisonScreen({ selection }: { selection: AppSelectio
   }
 
   const { raceContext, strategies, recommendedStrategyId, marginAnalysis, assumptionsUsed } = comparison;
+  const recommended = strategies.find((s) => s.id === recommendedStrategyId);
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-5">
@@ -81,6 +83,14 @@ export function StrategyComparisonScreen({ selection }: { selection: AppSelectio
           </div>
         )}
       </Panel>
+
+      {recommended && (
+        <CustomStrategyEditor
+          selection={selection}
+          recommendedLabel={`${recommended.numStops}-stop`}
+          recommendedTimeSeconds={recommended.predictedTotalRaceTimeSeconds}
+        />
+      )}
     </div>
   );
 }

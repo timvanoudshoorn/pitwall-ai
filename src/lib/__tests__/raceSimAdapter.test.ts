@@ -57,13 +57,16 @@ describe('raceSimAdapter.ts', () => {
       expect(result.raceContext.trackId).toBe('monza');
       expect(result.raceContext.carClass).toBe('f1_2025');
       expect(result.raceContext.performanceTier).toBe('midfield');
-      expect(result.strategies).toHaveLength(3); // 1/2/3-stop
+      // Monza's low abrasiveness rating (1/5) pushes the medium-compound cliff lap out far
+      // enough that a 3-stop no longer clears sim's plausibleStopCountNumbers() economic
+      // floor at full (53-lap) race distance -- 1-stop and 2-stop only. See SIMLOG.md #13.
+      expect(result.strategies).toHaveLength(2);
       expect(result.recommendedStrategyId).toBeDefined();
       expect(result.marginAnalysis).toBeDefined();
     });
 
     it('should handle all car classes', () => {
-      const classes = ['f1_2025', 'f1_2026_season_pack', 'f2', 'apxgp', 'f1_world'] as const;
+      const classes = ['f1_2025', 'f1_2026_season_pack', 'f2', 'f1_world'] as const;
       classes.forEach((carClass) => {
         const selection = createSelection({ carClassId: carClass });
         const result = buildStrategyComparison(selection);
@@ -127,8 +130,9 @@ describe('raceSimAdapter.ts', () => {
         },
       });
       const result = buildStrategyComparison(selection);
-      // Should still compute successfully even with telemetry
-      expect(result.strategies).toHaveLength(3);
+      // Should still compute successfully even with telemetry -- Monza @ 100% only
+      // clears the plausibility floor (SIMLOG.md #13) for 1-stop/2-stop, see above.
+      expect(result.strategies).toHaveLength(2);
     });
 
     it('should flag personal pace confidence in assumptions', () => {
@@ -150,9 +154,10 @@ describe('raceSimAdapter.ts', () => {
       const dryResult = buildStrategyComparison(drySelection);
       const wetResult = buildStrategyComparison(wetSelection);
 
-      // Both should compute but potentially with different strategies/times
-      expect(dryResult.strategies).toHaveLength(3);
-      expect(wetResult.strategies).toHaveLength(3);
+      // Both should compute but potentially with different strategies/times -- Monza @ 100%
+      // only clears the plausibility floor (SIMLOG.md #13) for 1-stop/2-stop, see above.
+      expect(dryResult.strategies).toHaveLength(2);
+      expect(wetResult.strategies).toHaveLength(2);
     });
   });
 
@@ -334,7 +339,7 @@ describe('raceSimAdapter.ts', () => {
     });
 
     it('should handle all car classes', () => {
-      const classes = ['f1_2025', 'f2', 'apxgp'] as const;
+      const classes = ['f1_2025', 'f2', 'f1_world'] as const;
       classes.forEach((carClass) => {
         const selection = createSelection({ carClassId: carClass, trackId: 'monza' });
         const comparison = buildStrategyComparison(selection);

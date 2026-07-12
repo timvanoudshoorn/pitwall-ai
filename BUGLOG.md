@@ -313,19 +313,18 @@ Built proper full-page screenshot verification using Playwright's ability to mea
 
 **Mobile Verification (375x667):**
 - CarClassTrackSelectScreen: Main content scrollable (scrollHeight=3386px, clientHeight=594px)
-- TierDial Status: Off-screen initially, but reachable by scrolling
-  - Position after full scroll: top=73px, bottom=667px (fully visible in viewport)
-  - Not a blocker (functional), but requires ~2792px scroll distance to reach
-  - UX note: Heavy content density on mobile (Car Class grid 4x2, TierDial below) pushes TierDial far down page
 
-**Specific TierDial Check:**
-- Desktop: Visible, accessible ✓
-- Mobile: Off-screen initially, but scrollable to ✓
-- Not permanently clipped (dismisses visual's clipping concern)
-- Slightly tight on mobile (lots of content above), but not broken
+**TierDial Analysis & Fix (2026-07-12):**
+- Initial position: y=943px (below 667px viewport) — requires scrolling to reach
+- Root cause: Car Class cards rendering full F2 description due to firstSentence() bug (wasn't breaking on semicolons)
+- Visual's fix (commit 28621ac): Updated dataAdapters.ts to break firstSentence() on `.!?;` not just `.!?`
+  - Result: F2 description now truncates at semicolon → Car Class panel shrinks
+  - New TierDial position: y=610px (fully visible on mobile, no scroll needed)
+  - Improvement: 333px moved up-screen
+- Status: ✓ Fixed — TierDial now visible initially on mobile without scrolling
 
-**Verified Screens:**
-1. CarClassTrackSelect: ✓ (TierDial reachable via scroll on mobile)
+**Verified Screens (post-fix):**
+1. CarClassTrackSelect: ✓ (TierDial now visible without scrolling on mobile)
 2. RaceParameters: ✓
 3. StrategyComparison: ✓
 4. TyreDegradation: ✓
@@ -338,6 +337,8 @@ Built proper full-page screenshot verification using Playwright's ability to mea
 - No permanently clipped content on any screen
 - All 8 screens render fully without console errors
 - Mobile reflow works correctly (scrollable when needed)
-- TierDial is functional on mobile (not a bug, just off-screen initially)
+- TierDial: Fixed by visual's dataAdapters.ts update (333px improvement, now initially visible)
 
 **Automated Test Coverage Note:** The 180 Vitest tests are unaffected by screenshot methodology (they test logic/math/adapter, not screenshots). Screenshot verification was purely for visual/layout validation and has been re-done with correct full-page capture.
+
+**Methodology Correction:** Initial BUGLOG reported "2792px scroll distance to reach TierDial" — this was a documentation error conflating total-page-scroll-capacity (scrollHeight - clientHeight) with element depth. The actual TierDial depth was y=943px (which is indeed off-screen on a 667px viewport), not 2792px. This error was caught by visual during follow-up validation and has been corrected above.

@@ -487,3 +487,56 @@ number at face value (same discipline as the race-length fix above):
 - Verified zero console errors across all 8 routes at both 1400x1000 and
   375x812 on the rebuilt app. `npx tsc --noEmit` and `npm run build`
   both clean, no chunk-size regression.
+
+## 2026-07-12 (later still) — Main menu screen + fresh 390x844 screenshot pass for the coordinator
+
+Picked up as a fresh session after real-device feedback (two rounds of
+mobile fixes above, user still says the app "looks bad" — coordinator
+wants real screenshots instead of a third guess) plus a concrete feature
+ask: the app launched straight into Car Class & Track Select with no title
+screen.
+
+- **New `MainMenuScreen`** (`src/screens/MainMenuScreen.tsx`) — a real home
+  screen, not a generic splash: `PITWALL AI` wordmark, a "Session Control"
+  `Panel` with a primary "New Strategy" action (accent-bordered, leads to
+  the existing select flow) and two visibly-inert placeholder rows (Saved
+  Strategies, Strategy Reference Library — `cursor-not-allowed`, `opacity-50`,
+  no `onClick`) so future entries read as "coming soon," not broken links.
+  Same instrument-panel primitives as every other screen (`Panel`, corner
+  ticks, `.tabular` micro-labels) — no new visual language introduced.
+- **Routing**: `App.tsx`'s `/` now renders `MainMenuScreen` (stays a static
+  import — zero waterfall on first paint, matching the reasoning that used
+  to justify keeping `CarClassTrackSelectScreen` static). Moved
+  `CarClassTrackSelectScreen` to `/select` and into the lazy-loaded group
+  since it's no longer the first thing downloaded. `NavRail.tsx` gained a
+  "Menu" tab (`Home` icon, `/`, first position) and its old "Select" tab now
+  points at `/select` instead of `/`. `npx tsc --noEmit` and `npm run build`
+  both clean, no chunk-size regression (new `CarClassTrackSelectScreen`
+  chunk, main entry chunk unaffected).
+- **Screenshot pass** (the coordinator's actual ask — capture, don't fix):
+  built an ad hoc Playwright driver reusing the corrected full-content
+  capture technique from the 2026-07-12 entry above (override `main`'s
+  overflow/height before `page.screenshot({ fullPage: true })`, since the
+  shell's `h-screen`+inner-scroll layout means the naive fullPage call
+  silently truncates to viewport size) against `vite preview` (production
+  build, not dev server) at a real 390x844 mobile viewport. Captured all 9
+  routes (8 existing + the new menu) to `screenshots/*.png` in the repo
+  root — gitignored, not committed, per the ask. Verified actual PNG pixel
+  dimensions by reading the IHDR chunk directly (not eyeballing, not
+  trusting Playwright's return value) rather than repeat last session's
+  original mistake: all 9 images are exactly 390px wide (zero horizontal
+  overflow) with heights that vary by genuine content (390x844 landing/
+  degradation/pit-window/explanation, 390x3082 select — the long
+  three-panel setup flow, 390x895-967 for comparison/battle/settings).
+  Cross-checked three of the "came out exactly 844" screens weren't
+  secretly still truncated by independently reading
+  `document.documentElement.scrollHeight` post-override — matched 844
+  exactly, confirming those screens' real content genuinely fits in one
+  mobile screen rather than the capture silently clipping again. Zero
+  console errors across all 9 routes. Did not fix anything based on what's
+  visible in the images — captured current true state only, per explicit
+  instruction; the coordinator has the file paths to show the user
+  directly instead of another guess-and-fix round.
+- Left `src/sim/strategyCompare.ts` (modified) and
+  `src/sim/stopCountPlausibility.ts`/`test_sim_direct.mjs` (untracked) alone
+  in the working tree — sim's in-progress work, not mine to stage or touch.

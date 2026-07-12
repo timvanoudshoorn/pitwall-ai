@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
+  Home,
   Flag,
   Gauge,
   GitCompareArrows,
@@ -11,7 +12,8 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Select', Icon: Flag, end: true },
+  { to: '/', label: 'Menu', Icon: Home, end: true },
+  { to: '/select', label: 'Select', Icon: Flag },
   { to: '/parameters', label: 'Parameters', Icon: Gauge },
   { to: '/comparison', label: 'Compare', Icon: GitCompareArrows },
   { to: '/degradation', label: 'Tyre Deg', Icon: LineChart },

@@ -2,19 +2,23 @@ import { lazy, Suspense, useState } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { RouteFallback } from './components/layout/RouteFallback';
-import { CarClassTrackSelectScreen } from './screens/CarClassTrackSelectScreen';
+import { MainMenuScreen } from './screens/MainMenuScreen';
 import type { AppSelection } from './types/session';
 
 /**
- * Every screen after the landing one (Car Class & Track Select) is
- * lazy-loaded — the production build was tripping Vite's 500KB chunk
- * warning with everything in one bundle, and the landing screen itself
- * needs none of it (no charts, no ai/ prompt-building code). This keeps
- * Recharts (Tyre Degradation, Strategy Battle) and ai/'s prompt-builder
- * (AI Explanation) out of the chunk a first-time visitor has to download
- * before they've even picked a car class. CarClassTrackSelectScreen stays
- * a static import so the very first paint has zero waterfall.
+ * The landing route is now the Main Menu (a real title screen — see
+ * MainMenuScreen for why) rather than Car Class & Track Select directly.
+ * Every screen except the landing one is lazy-loaded — the production
+ * build was tripping Vite's 500KB chunk warning with everything in one
+ * bundle, and the landing screen itself needs none of it (no charts, no
+ * ai/ prompt-building code, no data-adapter JSON). MainMenuScreen stays a
+ * static import so the very first paint has zero waterfall;
+ * CarClassTrackSelectScreen moved to `/select` and joined the lazy group
+ * since it's no longer the first thing downloaded.
  */
+const CarClassTrackSelectScreen = lazy(() =>
+  import('./screens/CarClassTrackSelectScreen').then((m) => ({ default: m.CarClassTrackSelectScreen })),
+);
 const RaceParametersScreen = lazy(() =>
   import('./screens/RaceParametersScreen').then((m) => ({ default: m.RaceParametersScreen })),
 );
@@ -65,7 +69,8 @@ function App() {
       <AppShell selection={selection}>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
-            <Route path="/" element={<CarClassTrackSelectScreen selection={selection} onChange={patchSelection} />} />
+            <Route path="/" element={<MainMenuScreen />} />
+            <Route path="/select" element={<CarClassTrackSelectScreen selection={selection} onChange={patchSelection} />} />
             <Route path="/parameters" element={<RaceParametersScreen selection={selection} onChange={patchSelection} />} />
             <Route path="/comparison" element={<StrategyComparisonScreen selection={selection} />} />
             <Route path="/degradation" element={<TyreDegradationScreen selection={selection} />} />

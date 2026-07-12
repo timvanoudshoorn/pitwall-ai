@@ -705,3 +705,23 @@ design the interactive editor UI against it — next step, see change log.
   extracted `resolveRaceContext()` helper with `compareStrategies()` so
   the two can't drift. Full vitest suite (180 tests) still green after
   the refactor.
+- **2026-07-12 (later):** Data teammate verified a user-flagged claim
+  that APXGP is mechanically just the standard My Team car with a livery
+  skin, not a distinct chassis (data/car-classes.json commit 090bdfd
+  folds it into `f1_2025.teams`, same treatment as Konnersport). Removed
+  `'apxgp'` from `CarClassKey`/`CAR_CLASSES` in `constants.ts` — see item
+  9's Konnersport/APXGP note, now superseded for APXGP specifically
+  (Konnersport itself is unaffected, still narrative/tier-driven). Fixed
+  every resulting call site TS flagged: `dataAdapters.ts` and
+  `raceSimAdapter.ts`'s id maps/switch (visual-owned, but pure dead-code
+  removal so fixed directly to keep the build green — left their
+  unrelated concurrent work in those files uncommitted for them),
+  `performanceTier.test.ts`'s now-dead APXGP case, and three
+  `raceSimAdapter.test.ts` assertions that hardcoded `toHaveLength(3)`
+  strategies for Monza — now correctly `toHaveLength(2)`, since Monza's
+  low (1/5) abrasiveness rating combined with item 13's plausibility
+  floor means a 3-stop no longer clears the economic threshold at full
+  race distance there (a real, intentional consequence of item 13's fix
+  surfacing through a previously-hardcoded test, not a regression).
+  Committed b41fff6. `DEFAULT_TIER_BY_CLASS` in `performanceTier.ts`
+  needed no change (never had an `apxgp` entry).

@@ -7,6 +7,133 @@ Owner: `ai` teammate. Files: `src/ai/*`.
 
 ---
 
+## 2026-07-12 — Prose-quality pass: owned template generator + sharper live-prompt persona
+
+Coordinator flagged that since there's still no live Claude call site
+(open infra decision, unchanged), the deterministic template text is
+literally what the user sees today, so its writing quality is a real
+product surface right now, not a placeholder detail. Went looking for
+where that template lived and found `buildTemplateExplanation()` had been
+built directly inside `AIExplanationScreen.tsx` (visual's file) as a
+stand-in for my `generateExplanation()` — functionally correct and
+already fully grounded (every clause reads a real field off the live
+`StrategyComparison`), but the prose itself reads like a data summary,
+not a race engineer: passive framing ("Box wall recommends the 2-stop,
+pitting lap 18 and lap 38, for a predicted total race time of 90.4
+minutes..."), buries the actual call after a full sentence of throat-
+clearing, no F1 vocabulary doing real work.
+
+**What I built:** `src/ai/templateExplain.ts` —
+`generateTemplateExplanation(mode, comparison, referenceFacts?, telemetry?)`,
+a from-scratch rewrite of that same content with the actual explanation-
+writing logic moved into `ai`'s ownership (where explanation content
+belongs) rather than living inside visual's screen component. Same
+grounding discipline as the prompt-based path: every clause is
+conditioned on a real field (a lap number, a delta, a tier string, a
+probability) — nothing is free text invented from nothing, it's just
+better-written phrasing wrapped around real numbers, the same way an
+`if (isCloseCall)` branch already was in the old version. Reuses
+`deriveUndercutOvercutMechanism()` for why-not-alternative mode so the
+window-vs-full-race distinction (see 2026-07-10 entry) carries into the
+deterministic path too, which the old template didn't attempt.
+
+**Concrete before/after** (`MOCK_CLOSE_CALL` fixture, recommendation
+mode):
+
+Before (old `buildTemplateExplanation` in `AIExplanationScreen.tsx`):
+> Box wall recommends the 1-stop, pitting lap 35, for a predicted total
+> race time of 102.1 minutes over 78 laps at Monaco.
+>
+> It's close — the top two strategies are only 0.3s apart, so this is a
+> genuine call rather than a runaway, and the box wall isn't overstating
+> confidence here. Safety-car probability is modeled at 61% this race and
+> rain probability at 5% — both are whole-race likelihoods, not a
+> forecast of which lap either arrives, so treat them as contingencies to
+> react to rather than a fixed plan.
+
+After (`generateTemplateExplanation`):
+> Start on mediums. Box lap 35 for the hards.
+>
+> Only 0.3s covers it over 78 laps — that's inside the model's noise
+> floor, not a real gap. Calling it "1-stop-med-hard" over
+> "1-stop-med-hard-late", but this is a genuine toss-up, not a knockout.
+> 61% safety-car risk today — that's a contingency to react to, not a lap
+> number, so stay ready to reshuffle if the board goes yellow. This is
+> about as hard as it gets to pass on — track position after the stop is
+> worth more than the raw pace number suggests.
+
+Same numbers throughout (35, 0.3, 78, 61, and now also the new
+overtaking-difficulty tier from the 2026-07-10 entry, which the old
+template didn't cite at all) — the call now leads instead of trailing,
+and the close-call framing reads like an engineer being straight with a
+driver instead of a hedge-everything disclaimer.
+
+Why-not-alternative before/after, same fixture (winner vs the
+close-second candidate):
+
+Before:
+> "1-stop-med-hard" and "1-stop-med-hard-late" are separated by only 0.3s
+> over 78 laps at Monaco — inside this model's noise floor, so treat it
+> as a genuine tradeoff rather than "1-stop-med-hard-late" being wrong.
+> "1-stop-med-hard" pits at lap 35; "1-stop-med-hard-late" pits at lap
+> 40. With safety-car probability modeled at 61% this race, the earlier
+> stop banks a cheaper caution-period pit if the SC comes out first; the
+> later stop keeps fresher rubber for the run to the flag if it doesn't.
+
+After:
+> "1-stop-med-hard-late" isn't a mistake, it's a pit-window timing call.
+> Same tyres, same shape — "1-stop-med-hard" boxes lap 35,
+> "1-stop-med-hard-late" boxes lap 40. In that window alone, the early
+> stop wins the pit-window itself by 20.6s. Over the full race that
+> shrinks to 0.3s — the later car claws most of it back on fresher rubber
+> for the rest of the stint. Genuine tradeoff on timing, not
+> "1-stop-med-hard-late" getting it wrong. 61% safety-car risk today...
+
+The "after" version is also strictly more informative, not just better
+voiced: it now surfaces the actual undercut/overcut window mechanism
+(20.6s in-window vs 0.3s full-race) that the old template never
+computed, which is the single most interesting fact in a why-not
+explanation and was previously left out entirely.
+
+**Grounding verification:** smoke-tested (`npx tsx`, scratch file
+deleted after) across `MOCK_CLEAR_WINNER`, `MOCK_CLOSE_CALL` (+
+`MOCK_REFERENCE_FACTS`), `MOCK_WET_WEATHER`, and `MOCK_CLEAR_WINNER` with
+`MOCK_TELEMETRY_CONTEXT`, both modes each — ran the generated text
+through `checkGrounding()` with the mechanism/telemetry objects included
+as `extraGroundedObjects` (same pattern as `promptBuilder.ts`'s
+`groundedExtras`): zero warnings across all eight combinations. First
+pass surfaced two real bugs, both fixed before commit: a double-period
+artifact where a contingency clause already ending in "." got another
+"." appended by the joiner, and a capitalization bug where every
+contingency sentence after the first stayed lowercase (fixed by
+capitalizing each joined sentence independently, not just the first).
+`tsc --noEmit -p tsconfig.app.json` clean, `npx vitest run src/ai` — 19
+tests passing (bugs' existing `grounding.test.ts` suite, unaffected).
+
+**Also sharpened the live-prompt `PERSONA`** in `promptBuilder.ts` (used
+whenever `generateExplanation()` eventually goes live) — added explicit
+structure guidance (lead with the one-line call before the reasoning,
+same "decision first" principle the template now follows), permission to
+use real pit-wall vocabulary (box, undercut/overcut, pit window, cover,
+track position, tyre cliff) only when the FACTS actually support that
+specific mechanism, and an explicit instruction against both
+over-hedging and false-confidence framing on close calls. This doesn't
+change what's groundable — `GROUNDING_RULES` is untouched — only how the
+model is told to write once it has the same closed fact set it always
+had.
+
+**Not done (deliberately, ownership boundary):** the actual call site —
+`AIExplanationScreen.tsx` still has its own `buildTemplateExplanation()`
+defined inline — is visual's file. Rather than edit it directly, messaged
+visual with the new `generateTemplateExplanation()` export and the exact
+before/after text so they can swap the call site (mechanical: same
+`(mode, comparison, telemetry)` inputs, now takes `referenceFacts` as a
+third param already available in that component via
+`buildTrackReferenceFacts()`). `generateTemplateExplanation` is exported
+from `src/ai/index.ts` alongside everything else.
+
+---
+
 ## 2026-07-11 — Telemetry-aware explanation mode (backlog #4 closed)
 
 Sim shipped the telemetry-import stretch feature (commit `76ce205`,

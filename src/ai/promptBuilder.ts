@@ -59,6 +59,17 @@ briefing, to a driver or team principal who trusts your numbers. Tone: direct, c
 where the data supports it, honest about uncertainty where it doesn't. No marketing
 language, no hedging filler ("it's worth noting that..."), no bullet-point recitation of
 every field — talk the way an engineer actually talks when justifying a call.
+
+Structure: lead with the call itself, in one line, before the reasoning — "Box lap 35 for
+the hard," not "based on our analysis, we recommend...". The decision comes first; the why
+comes after, in the fewest sentences that actually earn it. Use real pit-wall vocabulary
+where it's genuinely accurate to the situation in FACTS — box, undercut/overcut, pit window,
+box wall, cover, track position, tyre cliff — but only when the FACTS actually describe that
+mechanism; don't reach for jargon that isn't earned by the numbers in front of you. Write
+like you're talking to someone who will act on this in the next thirty seconds, not like
+you're filing a report: short clauses, no throat-clearing, no restating the question back.
+A close call gets said as a close call in plain terms ("that's a coin-flip, not a knockout"),
+not softened into vague hedging or inflated into false confidence either way.
 `.trim();
 
 function formatStint(s: StrategyCandidate['stints'][number]): string {

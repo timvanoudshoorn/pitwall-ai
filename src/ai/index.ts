@@ -31,3 +31,4 @@ export {
 } from './explain.ts';
 export { buildTrackReferenceFacts } from './trackReferenceFacts.ts';
 export { formatTelemetryFact } from './telemetryFacts.ts';
+export { generateTemplateExplanation } from './templateExplain.ts';

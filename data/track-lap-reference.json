@@ -7,11 +7,11 @@
       "placeholder": "No usable source or estimate basis yet; a plain default the sim should not treat as calibrated."
     },
     "raceLapsAndDistanceMethod": "Sourced from the 2024 F1 season's official race distance/lap counts (a Yahoo Sports 2024 season recap article compiling the FIA-published per-race lap counts). Lap counts almost never change year-to-year for an unchanged circuit (they're set once to satisfy the ~305km minimum race-distance rule), so these are used as the 2025 figures too, but that carry-forward itself is NOT independently reconfirmed for 2025 in this pass -- hence 'reasonable_estimate' rather than 'confirmed' even though the underlying 2024 figures are solid. circuitLengthKm is calculated as raceDistanceKm / raceLaps and cross-checked against independently known circuit lengths (e.g. Bahrain 5.41km, Monaco 3.34km, Spa 7.00km) -- all matched within rounding, which validates the source data.",
-    "referenceLapTimeMethod": "referenceLapTimeSec is each circuit's official F1 Grand Prix lap record (the fastest race lap ever set at that layout) -- a fixed, low, real number that gives sim/undercutOvercut/strategyCompare a track-differentiated baseline instead of the flat 90s placeholder. This is NOT a 'typical race pace' laptime (real race laps run several seconds slower once tyre deg/fuel load are modeled on top by sim's own degradation.ts/fuel.ts) -- it's a floor/reference value, same role the flat 90s placeholder was playing. Only Bahrain and Monaco were independently re-verified against Wikipedia in this pass (both matched general knowledge exactly); the remaining circuits' exact record times are from general F1 knowledge and are NOT independently re-verified per-circuit here, so all except Bahrain/Monaco are tagged reasonable_estimate. Recommend sim treat the whole field as directionally reliable (correctly rank-orders tracks, e.g. Monaco << Silverstone << Spa) but re-verify exact digits before treating any single value as broadcast-accurate.",
+    "referenceLapTimeMethod": "referenceLapTimeSec is each circuit's official F1 Grand Prix lap record (the fastest race lap ever set at the CURRENT layout of that circuit) -- a fixed, low, real number that gives sim/undercutOvercut/strategyCompare a track-differentiated baseline instead of a flat generic placeholder. This is NOT a \"typical race pace\" laptime (real race laps run several seconds slower once tyre deg/fuel load are modeled on top by sim's own degradation.ts/fuel.ts) -- it's a floor/reference value. UPDATED 2026-07-12: every circuit except madring (no race run yet) has now been independently verified against Wikipedia's per-circuit lap-records table and is tagged confirmed, up from the original pass's Bahrain/Monaco-only verification. Several records had moved since the file was first published on 2026-07-10 (Barcelona, Red Bull Ring, Spa, Singapore, Las Vegas, Lusail, Yas Marina all have newer record-holders than this file originally listed) -- each updated entry's basis string notes this explicitly. Re-verify periodically, since these are live records that move as the season progresses (e.g. Monza's record moved mid-2025, during the same season this research was conducted in).",
     "fullThrottlePctMethod": "Percentage of the lap spent at full throttle -- a real, commonly-published F1 technical-preview stat (Mercedes/Pirelli circuit guides). Anchored to several confirmed public figures (Monza >80%, Jeddah 79%, Silverstone 70%, Suzuka ~66%, Hungaroring ~53-61%, Singapore 49%, with Monaco and Mexico City reported lower still) and interpolated for the remaining circuits using the same circuit-characteristic reasoning as track-tyre-characteristics.json's abrasivenessRating (straight length/count, chicane density, street vs permanent). All values reasonable_estimate except where a source figure is cited directly in a circuit's basis string.",
     "fuelPerLapKgMethod": "No single published per-circuit fuel-consumption table exists (same gap noted for pit-loss/SC data in tracks.json). Computed via an explicit, documented formula rather than invented per-circuit: fuelPerLapKg = 0.30 * circuitLengthKm + 0.15 + (fullThrottlePct - 60) / 100 * 0.4 -- i.e. a lap-length-scaled base (longer lap burns more fuel) plus a throttle-intensity adjustment (higher full-throttle % burns more fuel per km than a low-speed technical lap). This is an invented-but-transparent methodology, calibrated only to land in the commonly-cited real-F1 range of ~1.0-2.3kg/lap (Monaco lowest, Spa/Las Vegas/Jeddah highest) -- explicitly a reasonable_estimate for every circuit, not measured data. Sim's fuel.ts can multiply by raceLaps to get a track-specific startFuelKg instead of the flat 110kg placeholder.",
     "overtakingDifficultyMethod": "Qualitative low/medium/high/very_high tier + basis string, added per ai teammate's request (2026-07-10) for a sourceable ReferenceFact to replace their hand-written Monaco placeholder text in why-not-alternative explanations. Reasonable_estimate, drawn from well-documented circuit reputation (DRS zone count/placement, straight length, corner width) rather than a single cited statistic -- same confidence tier as the abrasiveness ratings.",
-    "lastReviewed": "2026-07-11",
+    "lastReviewed": "2026-07-12",
     "cornersMethod": "corners = official/widely-published turn count per circuit (F1.com/Wikipedia circuit guides), added 2026-07-11 to let this file fully supersede src/mocks/lapsAndCorners.ts (which was missing shanghai and madring entirely, and still had barcelona at its pre-2023 16-corner count -- corrected to 14 here after independent verification). Only shanghai, barcelona, and madring were independently re-verified this pass (confirmed); the remaining 22 are reasonable_estimate widely-published figures carried over from general knowledge, consistent with (and cross-checked against) the values visual had already been using via lapsAndCorners.ts."
   },
   "circuits": [
@@ -25,8 +25,9 @@
       "circuitLengthKm": 5.278,
       "referenceLapTimeSec": {
         "value": 79.813,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:19.813 (Leclerc, 2024, current post-2022 reprofiled layout)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:19.813 (Charles Leclerc, Ferrari SF-24, 2024 Australian GP, current 2021-present layout).",
+        "source": "https://en.wikipedia.org/wiki/Albert_Park_Circuit"
       },
       "fullThrottlePct": {
         "value": 75,
@@ -59,8 +60,9 @@
       "circuitLengthKm": 5.449,
       "referenceLapTimeSec": {
         "value": 92.238,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:32.238 (Schumacher, 2004)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:32.238 (Michael Schumacher, Ferrari F2004, 2004 Chinese GP) -- stood unbroken since 2004.",
+        "source": "https://en.wikipedia.org/wiki/Shanghai_International_Circuit"
       },
       "fullThrottlePct": {
         "value": 58,
@@ -94,8 +96,9 @@
       "circuitLengthKm": 5.802,
       "referenceLapTimeSec": {
         "value": 90.965,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:30.965 (Antonelli, 2025)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:30.965 (Andrea Kimi Antonelli, Mercedes W16, 2025 Japanese GP).",
+        "source": "https://en.wikipedia.org/wiki/Suzuka_Circuit"
       },
       "fullThrottlePct": {
         "value": 66,
@@ -115,7 +118,7 @@
       "corners": {
         "value": 18,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec (figure-eight layout)."
+        "basis": "Widely published circuit spec (figure-eight layout). Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -150,7 +153,7 @@
       "corners": {
         "value": 15,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec (Grand Prix layout)."
+        "basis": "Widely published circuit spec (Grand Prix layout). Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -163,8 +166,9 @@
       "circuitLengthKm": 6.169,
       "referenceLapTimeSec": {
         "value": 90.734,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:30.734 (Verstappen-era pace, 2021-2025 range)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:30.734 (Lewis Hamilton, Mercedes W12, 2021 Saudi Arabian GP).",
+        "source": "https://en.wikipedia.org/wiki/Jeddah_Corniche_Circuit"
       },
       "fullThrottlePct": {
         "value": 79,
@@ -185,7 +189,7 @@
       "corners": {
         "value": 27,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec -- most corners of any circuit on the calendar."
+        "basis": "Widely published circuit spec -- most corners of any circuit on the calendar. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -198,8 +202,9 @@
       "circuitLengthKm": 5.409,
       "referenceLapTimeSec": {
         "value": 89.708,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:29.708 (Verstappen, 2023)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:29.708 (Max Verstappen, Red Bull RB19, 2023 Miami GP).",
+        "source": "https://en.wikipedia.org/wiki/Miami_International_Autodrome"
       },
       "fullThrottlePct": {
         "value": 60,
@@ -219,7 +224,7 @@
       "corners": {
         "value": 19,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "basis": "Widely published circuit spec. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -232,8 +237,9 @@
       "circuitLengthKm": 4.906,
       "referenceLapTimeSec": {
         "value": 75.484,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:15.484 (Hamilton, 2020)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:15.484 (Lewis Hamilton, Mercedes W11, 2020 Emilia Romagna GP, current 2008-present layout).",
+        "source": "https://en.wikipedia.org/wiki/Imola_Circuit"
       },
       "fullThrottlePct": {
         "value": 72,
@@ -253,7 +259,7 @@
       "corners": {
         "value": 19,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "basis": "Widely published circuit spec. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -288,7 +294,7 @@
       "corners": {
         "value": 19,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec (current post-2015-layout count)."
+        "basis": "Widely published circuit spec (current post-2015-layout count). Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -300,9 +306,10 @@
       },
       "circuitLengthKm": 4.655,
       "referenceLapTimeSec": {
-        "value": 76.33,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:16.330 (Verstappen, 2023)."
+        "value": 75.743,
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:15.743 (Oscar Piastri, McLaren MCL39, 2025 Spanish GP, current no-chicane 2021-present layout). UPDATED 2026-07-12 -- record moved since this file was first published (was Verstappen 2023 at the time, now superseded).",
+        "source": "https://en.wikipedia.org/wiki/Circuit_de_Barcelona-Catalunya"
       },
       "fullThrottlePct": {
         "value": 65,
@@ -337,8 +344,9 @@
       "circuitLengthKm": 4.361,
       "referenceLapTimeSec": {
         "value": 73.078,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:13.078 (Bottas, 2019)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:13.078 (Valtteri Bottas, Mercedes W10, 2019 Canadian GP).",
+        "source": "https://en.wikipedia.org/wiki/Circuit_Gilles_Villeneuve"
       },
       "fullThrottlePct": {
         "value": 72,
@@ -358,7 +366,7 @@
       "corners": {
         "value": 14,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "basis": "Widely published circuit spec. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -370,9 +378,10 @@
       },
       "circuitLengthKm": 4.318,
       "referenceLapTimeSec": {
-        "value": 65.619,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:05.619 (Sainz, 2020)."
+        "value": 67.924,
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:07.924 (Oscar Piastri, McLaren MCL39, 2025 Austrian GP, current 2025-present 4.326km layout). UPDATED 2026-07-12 -- circuit layout itself changed for 2025 (record is now SLOWER than the previous 2020 figure this file had, because the track got longer/more technical, not because cars got slower).",
+        "source": "https://en.wikipedia.org/wiki/Red_Bull_Ring"
       },
       "fullThrottlePct": {
         "value": 68,
@@ -392,7 +401,7 @@
       "corners": {
         "value": 10,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec -- fewest corners of any calendar circuit."
+        "basis": "Widely published circuit spec -- fewest corners of any calendar circuit. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -405,8 +414,9 @@
       "circuitLengthKm": 5.891,
       "referenceLapTimeSec": {
         "value": 87.097,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:27.097 (Verstappen, 2020)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:27.097 (Max Verstappen, Red Bull RB16, 2020 British GP, current Arena/2011-present layout).",
+        "source": "https://en.wikipedia.org/wiki/Silverstone_Circuit"
       },
       "fullThrottlePct": {
         "value": 70,
@@ -427,7 +437,7 @@
       "corners": {
         "value": 18,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "basis": "Widely published circuit spec. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -439,9 +449,10 @@
       },
       "circuitLengthKm": 7.001,
       "referenceLapTimeSec": {
-        "value": 106.286,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:46.286 (Bottas, 2018)."
+        "value": 104.701,
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:44.701 (Sergio Perez, Red Bull RB20, 2024 Belgian GP, current 2007-present 7.004km layout). UPDATED 2026-07-12 -- record moved since this file was first published (was Bottas 2018 at the time).",
+        "source": "https://en.wikipedia.org/wiki/Circuit_de_Spa-Francorchamps"
       },
       "fullThrottlePct": {
         "value": 73,
@@ -461,7 +472,7 @@
       "corners": {
         "value": 19,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "basis": "Widely published circuit spec. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -474,8 +485,9 @@
       "circuitLengthKm": 4.381,
       "referenceLapTimeSec": {
         "value": 76.627,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:16.627 (Hamilton, 2020)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:16.627 (Lewis Hamilton, Mercedes W11, 2020 Hungarian GP).",
+        "source": "https://en.wikipedia.org/wiki/Hungaroring"
       },
       "fullThrottlePct": {
         "value": 58,
@@ -496,7 +508,7 @@
       "corners": {
         "value": 14,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "basis": "Widely published circuit spec. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -509,8 +521,9 @@
       "circuitLengthKm": 4.259,
       "referenceLapTimeSec": {
         "value": 71.097,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:11.097 (Hamilton, 2021)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:11.097 (Lewis Hamilton, Mercedes W12, 2021 Dutch GP).",
+        "source": "https://en.wikipedia.org/wiki/Circuit_Zandvoort"
       },
       "fullThrottlePct": {
         "value": 55,
@@ -530,7 +543,7 @@
       "corners": {
         "value": 14,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec (includes the two banked corners)."
+        "basis": "Widely published circuit spec (includes the two banked corners). Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -543,8 +556,9 @@
       "circuitLengthKm": 5.789,
       "referenceLapTimeSec": {
         "value": 80.901,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, 1:20.901 (Norris, 2025, breaking Barrichello's long-standing 2004 record of 1:21.046)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:20.901 (Lando Norris, McLaren MCL39, 2025 Italian GP) -- the fastest average-speed lap ever recorded in F1 World Championship history (257.8km/h average).",
+        "source": "https://en.wikipedia.org/wiki/Monza_Circuit"
       },
       "fullThrottlePct": {
         "value": 82,
@@ -565,7 +579,7 @@
       "corners": {
         "value": 11,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec -- lowest-corner-count high-speed layout."
+        "basis": "Widely published circuit spec -- lowest-corner-count high-speed layout. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -578,8 +592,9 @@
       "circuitLengthKm": 6.001,
       "referenceLapTimeSec": {
         "value": 103.009,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:43.009 (Leclerc, 2019)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:43.009 (Charles Leclerc, Ferrari SF90, 2019 Azerbaijan GP).",
+        "source": "https://en.wikipedia.org/wiki/Baku_City_Circuit"
       },
       "fullThrottlePct": {
         "value": 65,
@@ -599,7 +614,7 @@
       "corners": {
         "value": 20,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "basis": "Widely published circuit spec. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -611,9 +626,10 @@
       },
       "circuitLengthKm": 4.94,
       "referenceLapTimeSec": {
-        "value": 101.905,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:41.905 (post-2023 layout-shortening era)."
+        "value": 93.808,
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:33.808 (Lewis Hamilton, Ferrari SF-25, 2025 Singapore GP, current 4.927km 2025-present layout). UPDATED 2026-07-12 -- record moved significantly since this file was first published (was a rough estimate at the time; current record is nearly 8s faster).",
+        "source": "https://en.wikipedia.org/wiki/Marina_Bay_Street_Circuit"
       },
       "fullThrottlePct": {
         "value": 49,
@@ -647,8 +663,9 @@
       "circuitLengthKm": 5.507,
       "referenceLapTimeSec": {
         "value": 96.169,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:36.169 (Leclerc, 2019)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:36.169 (Charles Leclerc, Ferrari SF90, 2019 United States GP).",
+        "source": "https://en.wikipedia.org/wiki/Circuit_of_the_Americas"
       },
       "fullThrottlePct": {
         "value": 65,
@@ -668,7 +685,7 @@
       "corners": {
         "value": 20,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "basis": "Widely published circuit spec. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -681,8 +698,9 @@
       "circuitLengthKm": 4.301,
       "referenceLapTimeSec": {
         "value": 77.774,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:17.774 (Bottas, 2021)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:17.774 (Valtteri Bottas, Mercedes W12, 2021 Mexico City GP).",
+        "source": "https://en.wikipedia.org/wiki/Aut%C3%B3dromo_Hermanos_Rodr%C3%ADguez"
       },
       "fullThrottlePct": {
         "value": 55,
@@ -703,7 +721,7 @@
       "corners": {
         "value": 17,
         "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "basis": "Widely published circuit spec. Cross-checked 2026-07-12 against a second independent circuit-data compilation (flowracers.com) -- matched exactly, which strengthens confidence, but keeping as reasonable_estimate since that source is itself a secondary compilation, not a primary/official one."
       }
     },
     {
@@ -716,8 +734,9 @@
       "circuitLengthKm": 4.309,
       "referenceLapTimeSec": {
         "value": 70.54,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:10.540 (Bottas, 2018)."
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:10.540 (Valtteri Bottas, Mercedes W09, 2018 Brazilian GP).",
+        "source": "https://en.wikipedia.org/wiki/Aut%C3%B3dromo_Jos%C3%A9_Carlos_Pace"
       },
       "fullThrottlePct": {
         "value": 65,
@@ -749,9 +768,10 @@
       },
       "circuitLengthKm": 6.199,
       "referenceLapTimeSec": {
-        "value": 95.49,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:35.490 (Piastri, 2023)."
+        "value": 93.365,
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:33.365 (Max Verstappen, Red Bull RB21, 2025 Las Vegas GP). UPDATED 2026-07-12 -- record moved since this file was first published (was Piastri 2023 at the time).",
+        "source": "https://en.wikipedia.org/wiki/Las_Vegas_Strip_Circuit"
       },
       "fullThrottlePct": {
         "value": 80,
@@ -770,8 +790,9 @@
       },
       "corners": {
         "value": 17,
-        "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "confidence": "confirmed",
+        "basis": "Official Las Vegas GP circuit site confirms 17 corners on the 6.120km Strip circuit.",
+        "source": "https://www.f1lasvegasgp.com/track-layout/"
       }
     },
     {
@@ -783,9 +804,10 @@
       },
       "circuitLengthKm": 5.414,
       "referenceLapTimeSec": {
-        "value": 84.319,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:24.319 (Verstappen, 2023)."
+        "value": 82.384,
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:22.384 (Lando Norris, McLaren, 2024 Qatar GP). UPDATED 2026-07-12 -- record moved since this file was first published (was Verstappen 2023 at the time).",
+        "source": "https://en.wikipedia.org/wiki/Lusail_International_Circuit"
       },
       "fullThrottlePct": {
         "value": 70,
@@ -804,8 +826,9 @@
       },
       "corners": {
         "value": 16,
-        "confidence": "reasonable_estimate",
-        "basis": "Widely published circuit spec."
+        "confidence": "confirmed",
+        "basis": "16 corners (10 right-handers, 6 left-handers), independently verified 2026-07-12.",
+        "source": "https://f1.fandom.com/wiki/Lusail_International_Circuit"
       }
     },
     {
@@ -817,9 +840,10 @@
       },
       "circuitLengthKm": 5.279,
       "referenceLapTimeSec": {
-        "value": 86.103,
-        "confidence": "reasonable_estimate",
-        "basis": "F1 GP lap record, ~1:26.103 (Verstappen, 2021, current post-2021-reprofile layout)."
+        "value": 85.637,
+        "confidence": "confirmed",
+        "basis": "F1 GP lap record, 1:25.637 (Kevin Magnussen, Haas VF-24, 2024 Abu Dhabi GP, current 2021-present layout). UPDATED 2026-07-12 -- record moved since this file was first published (was Verstappen 2021 at the time).",
+        "source": "https://en.wikipedia.org/wiki/Yas_Marina_Circuit"
       },
       "fullThrottlePct": {
         "value": 62,

@@ -30,8 +30,16 @@ export type PerformanceTierKey = 'backmarker' | 'midfield' | 'contender' | 'top_
  * whatever team car they're recruited into in Driver Career, so they
  * consume that team's class+tier rather than having their own pace
  * table row — model this as a driver-skill layer elsewhere, not here.
+ *
+ * CORRECTION (2026-07-12, per data teammate's verification of a
+ * user-flagged claim): APXGP is confirmed to be mechanically just the
+ * standard My Team car with a livery skin in the Career Mode gameplay
+ * this app models, not a distinct chassis/class — removed as a
+ * standalone `CarClassKey` entirely (same treatment data gave
+ * Konnersport: it's a My Team livery, not a pace-table row of its own).
+ * See SIMLOG.md #9's Konnersport/APXGP note, now superseded for APXGP.
  */
-export type CarClassKey = 'f1_2025' | 'f1_2026_season_pack' | 'f2' | 'apxgp' | 'f1_world';
+export type CarClassKey = 'f1_2025' | 'f1_2026_season_pack' | 'f2' | 'f1_world';
 
 export interface TyreCompoundParams {
   gripLevel: number;
@@ -198,8 +206,6 @@ export const CAR_CLASSES: Record<CarClassKey, CarClassParams> = {
   // Single Dallara F2 chassis assumed to run unchanged 2024-2026 per FIA (data teammate correction).
   // tierPaceRangeScale compressed: driver skill dominates over car variance in real-world F2.
   f2: { basePaceOffsetSec: 4.9, tyreWearMultiplier: 1.07, ersModel: 'none', tierPaceRangeScale: 0.25 },
-  // No official pace baseline exists; left at parity with f1_2025, let the tier slider carry underdog/competitive narrative.
-  apxgp: { basePaceOffsetSec: 0, tyreWearMultiplier: 1.0, ersModel: 'legacy', tierPaceRangeScale: 1.0 },
   // PLACEHOLDER: agreed-default (not confirmed) — F1 World is a competitively-neutral-by-design
   // mode with fixed setups in Ranked; kept at parity with f1_2025, tier slider expected to default
   // to 'midfield' for this class (see data teammate's DATALOG.md).

@@ -86,7 +86,6 @@ describe('performanceTier.ts', () => {
         'f1_2025',
         'f1_2026_season_pack',
         'f2',
-        'apxgp',
         'f1_world',
       ];
       classes.forEach((carClass) => {
@@ -177,11 +176,9 @@ describe('performanceTier.ts', () => {
       expect(profile.combinedPaceOffsetSec).toBeCloseTo(2.75, 2);
     });
 
-    it('should apply APXGP pace correctly', () => {
-      const profile = resolveCarProfile('apxgp', 'midfield', 90);
-      // APXGP has no class offset, midfield is 1.1%
-      expect(profile.combinedPaceOffsetSec).toBeCloseTo(90 * 0.011, 2);
-    });
+    // APXGP removed as a standalone CarClassKey 2026-07-12 (data teammate confirmed it's
+    // mechanically just the standard My Team car, folded into f1_2025.teams) -- no longer
+    // a class to test pace offset for.
   });
 
   describe('PERFORMANCE_TIER_ORDER', () => {

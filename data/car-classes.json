@@ -19,18 +19,72 @@
       "description": "The 10 real-world 2025 F1 constructors, base game content. This is the pace/tyre baseline every other class' strategy assumptions get compared against.",
       "source": "https://www.ea.com/en/games/f1/f1-25/faq ; https://en.wikipedia.org/wiki/2025_Formula_One_World_Championship ; https://formularapida.net/en/f1-2025-team-chassis-name-drivers-numbers-officials-more/",
       "teams": [
-        {"id": "mclaren_2025", "officialName": "McLaren Formula 1 Team", "confidence": "confirmed"},
-        {"id": "ferrari_2025", "officialName": "Scuderia Ferrari HP", "confidence": "confirmed"},
-        {"id": "red_bull_2025", "officialName": "Oracle Red Bull Racing", "confidence": "confirmed"},
-        {"id": "mercedes_2025", "officialName": "Mercedes-AMG PETRONAS Formula One Team", "confidence": "confirmed"},
-        {"id": "aston_martin_2025", "officialName": "Aston Martin Aramco Formula One Team", "confidence": "confirmed"},
-        {"id": "alpine_2025", "officialName": "BWT Alpine Formula One Team", "confidence": "confirmed"},
-        {"id": "williams_2025", "officialName": "Atlassian Williams Racing", "confidence": "confirmed"},
-        {"id": "racing_bulls_2025", "officialName": "Visa Cash App RB Formula One Team", "confidence": "confirmed", "notes": "Sponsor-naming churns mid-season historically; re-verify before each season update."},
-        {"id": "kick_sauber_2025", "officialName": "Stake F1 Team Kick Sauber", "confidence": "confirmed", "notes": "Transitions to Audi works team for 2026 — see f1_2026 class."},
-        {"id": "haas_2025", "officialName": "MoneyGram Haas F1 Team", "confidence": "confirmed"},
-        {"id": "konnersport", "officialName": "Konnersport", "confidence": "confirmed", "notes": "Fictional 11th team from Braking Point, selectable as an alternative 11th-team slot to APXGP in Driver Career/My Team. Principal Casper Akkerman, liaison Devon Butler; drivers Callie Mayer and Aiden Jackson in the Braking Point narrative. Strategy-relevant baseline: game narrative frames Konnersport as a genuine title threat to Red Bull, i.e. a Top Tier-capable car once its own career arc develops, not a fixed backmarker.", "source": "https://en.wikipedia.org/wiki/F1_25 ; https://www.ea.com/en/games/f1/f1-25/features/braking-point-3"},
-        {"id": "apxgp", "officialName": "APXGP (F1 THE MOVIE tie-in)", "confidence": "confirmed", "notes": "Fictional team from the 2025 Apple Original Films movie 'F1', selectable as an alternative 11th-team slot to Konnersport in Driver Career/My Team (Iconic Edition / Iconic Edition Upgrade content). Drivers: Sonny Hayes (Brad Pitt) and Joshua Pearce (Damson Idris). CORRECTED 2026-07-12 (was previously modeled as its own top-level car class, id 'apxgp' — see _meta.corrections below for why that was wrong): in the ongoing Career Mode/My Team gameplay this app models, the APXGP car uses F1 25's standard My Team/multiplayer car model with an APXGP livery/sponsor skin — mechanically the same chassis as any other f1_2025 team, not a distinct performance class. (APXGP does get a bespoke, uniquely-modeled car in the six movie-inspired scenario missions — Silverstone intro free to all, then Monza/Zandvoort/Mexico/Spa/Abu Dhabi as Iconic Edition content — but those are one-off scripted missions outside the season/track/tier strategy flow this app is built around, so that distinction isn't strategy-relevant here.) No official pace baseline published for the Career Mode version either way; movie narrative frames APXGP as a struggling backmarker team on an underdog redemption arc, so Backmarker-to-Midfield is a reasonable tier-slider default pending an explicit dev statement, same treatment as Konnersport's narrative-driven default — reasonable_estimate, not confirmed.", "source": "https://www.ea.com/en/games/f1/f1-25/news/f1-25-f1-movie ; https://www.gamereactor.eu/how-fast-will-brad-pitts-apxgp-car-be-in-f1-25-1535133/ ; https://www.espn.com/gaming/story/_/id/45253044/ea-sports-f1-25-braking-point-f1-movie"}
+        {
+          "id": "mclaren_2025",
+          "officialName": "McLaren Formula 1 Team",
+          "confidence": "confirmed"
+        },
+        {
+          "id": "ferrari_2025",
+          "officialName": "Scuderia Ferrari HP",
+          "confidence": "confirmed"
+        },
+        {
+          "id": "red_bull_2025",
+          "officialName": "Oracle Red Bull Racing",
+          "confidence": "confirmed"
+        },
+        {
+          "id": "mercedes_2025",
+          "officialName": "Mercedes-AMG PETRONAS Formula One Team",
+          "confidence": "confirmed"
+        },
+        {
+          "id": "aston_martin_2025",
+          "officialName": "Aston Martin Aramco Formula One Team",
+          "confidence": "confirmed"
+        },
+        {
+          "id": "alpine_2025",
+          "officialName": "BWT Alpine Formula One Team",
+          "confidence": "confirmed"
+        },
+        {
+          "id": "williams_2025",
+          "officialName": "Atlassian Williams Racing",
+          "confidence": "confirmed"
+        },
+        {
+          "id": "racing_bulls_2025",
+          "officialName": "Visa Cash App RB Formula One Team",
+          "confidence": "confirmed",
+          "notes": "Sponsor-naming churns mid-season historically; re-verify before each season update."
+        },
+        {
+          "id": "kick_sauber_2025",
+          "officialName": "Stake F1 Team Kick Sauber",
+          "confidence": "confirmed",
+          "notes": "Transitions to Audi works team for 2026 — see f1_2026 class."
+        },
+        {
+          "id": "haas_2025",
+          "officialName": "MoneyGram Haas F1 Team",
+          "confidence": "confirmed"
+        },
+        {
+          "id": "konnersport",
+          "officialName": "Konnersport",
+          "confidence": "confirmed",
+          "notes": "Fictional 11th team from Braking Point, selectable as an alternative 11th-team slot to APXGP in Driver Career/My Team. Principal Casper Akkerman, liaison Devon Butler; drivers Callie Mayer and Aiden Jackson in the Braking Point narrative. Strategy-relevant baseline: game narrative frames Konnersport as a genuine title threat to Red Bull, i.e. a Top Tier-capable car once its own career arc develops, not a fixed backmarker.",
+          "source": "https://en.wikipedia.org/wiki/F1_25 ; https://www.ea.com/en/games/f1/f1-25/features/braking-point-3"
+        },
+        {
+          "id": "apxgp",
+          "officialName": "APXGP (F1 THE MOVIE tie-in)",
+          "confidence": "confirmed",
+          "notes": "Fictional team from the 2025 Apple Original Films movie 'F1', selectable as an alternative 11th-team slot to Konnersport in Driver Career/My Team (Iconic Edition / Iconic Edition Upgrade content). Drivers: Sonny Hayes (Brad Pitt) and Joshua Pearce (Damson Idris). CORRECTED 2026-07-12 (was previously modeled as its own top-level car class, id 'apxgp' — see _meta.corrections below for why that was wrong): in the ongoing Career Mode/My Team gameplay this app models, the APXGP car uses F1 25's standard My Team/multiplayer car model with an APXGP livery/sponsor skin — mechanically the same chassis as any other f1_2025 team, not a distinct performance class. (APXGP does get a bespoke, uniquely-modeled car in the six movie-inspired scenario missions — Silverstone intro free to all, then Monza/Zandvoort/Mexico/Spa/Abu Dhabi as Iconic Edition content — but those are one-off scripted missions outside the season/track/tier strategy flow this app is built around, so that distinction isn't strategy-relevant here.) No official pace baseline published for the Career Mode version either way; movie narrative frames APXGP as a struggling backmarker team on an underdog redemption arc, so Backmarker-to-Midfield is a reasonable tier-slider default pending an explicit dev statement, same treatment as Konnersport's narrative-driven default — reasonable_estimate, not confirmed.",
+          "source": "https://www.ea.com/en/games/f1/f1-25/news/f1-25-f1-movie ; https://www.gamereactor.eu/how-fast-will-brad-pitts-apxgp-car-be-in-f1-25-1535133/ ; https://www.espn.com/gaming/story/_/id/45253044/ea-sports-f1-25-braking-point-f1-movie"
+        }
       ],
       "strategyNotes": "Pace order is not fixed in-game (depends on user's own team/upgrades in career modes); for AI-recruited or non-player teams the game's own AI pace model governs. Treat per-team absolute pace as NOT something this app should hardcode — use the Performance Tier slider (see performance-tiers.md) instead, seeded by real-world 2025 competitive order only as flavor/default suggestion.",
       "tierSliderApplies": true
@@ -42,17 +96,67 @@
       "description": "New-regulation 2026-spec cars, sold as paid DLC on top of F1 25. 11 real teams (Cadillac joins, Kick Sauber becomes Audi), plus My Team as a 12th slot. Same F1 25 game infrastructure, new cars/tracks/rules layered in.",
       "source": "https://www.ea.com/games/f1/f1-25/news/f1-25-2026-season-pack-official-reveal ; https://www.ea.com/en/games/f1/f1-25/features/26-season-update-new-teams ; https://traxion.gg/how-f1-25s-2026-season-pack-replicates-the-new-regulations/",
       "teams": [
-        {"id": "mclaren_2026", "officialName": "McLaren Formula 1 Team", "confidence": "reasonable_estimate", "notes": "Team identity confirmed present; exact 2026 title-sponsor string not individually re-verified per team."},
-        {"id": "ferrari_2026", "officialName": "Scuderia Ferrari", "confidence": "reasonable_estimate"},
-        {"id": "red_bull_2026", "officialName": "Oracle Red Bull Racing", "confidence": "confirmed", "notes": "Isack Hadjar confirmed partnering Verstappen for 2026."},
-        {"id": "mercedes_2026", "officialName": "Mercedes-AMG PETRONAS Formula One Team", "confidence": "reasonable_estimate"},
-        {"id": "aston_martin_2026", "officialName": "Aston Martin Aramco Formula One Team", "confidence": "reasonable_estimate"},
-        {"id": "alpine_2026", "officialName": "BWT Alpine Formula One Team", "confidence": "reasonable_estimate"},
-        {"id": "williams_2026", "officialName": "Atlassian Williams Racing", "confidence": "reasonable_estimate"},
-        {"id": "racing_bulls_2026", "officialName": "Racing Bulls", "confidence": "confirmed", "notes": "Arvid Lindblad joins Liam Lawson for 2026."},
-        {"id": "audi_2026", "officialName": "Audi F1 Team", "confidence": "confirmed", "notes": "Successor to Kick Sauber; Gabriel Bortoleto and Nico Hulkenberg confirmed drivers."},
-        {"id": "haas_2026", "officialName": "Haas F1 Team", "confidence": "reasonable_estimate"},
-        {"id": "cadillac_2026", "officialName": "Cadillac F1 Team", "confidence": "confirmed", "notes": "Brand-new 11th constructor, first major American manufacturer entry. Car: MAC-26 (Mario Andretti Cadillac). Ferrari customer power unit through 2028, own GM power unit from 2029. Drivers Sergio Perez (#11) and Valtteri Bottas (#77). As a first-year team with a customer engine and no F1-spec development history, its realistic strategy-relevant baseline is Backmarker-to-low-Midfield, not assumed competitive — flag for sim as a case where 'real-world debut team' should not default to Midfield.", "source": "https://www.formula1.com/en/teams/cadillac ; https://www.skysports.com/f1/news/12040/13492528/cadillac-f1-all-you-need-to-know-about-new-2026-team-drivers-team-principal-engine-super-bowl-launch"}
+        {
+          "id": "mclaren_2026",
+          "officialName": "McLaren Formula 1 Team",
+          "confidence": "reasonable_estimate",
+          "notes": "Team identity confirmed present; exact 2026 title-sponsor string not individually re-verified per team."
+        },
+        {
+          "id": "ferrari_2026",
+          "officialName": "Scuderia Ferrari",
+          "confidence": "reasonable_estimate"
+        },
+        {
+          "id": "red_bull_2026",
+          "officialName": "Oracle Red Bull Racing",
+          "confidence": "confirmed",
+          "notes": "Isack Hadjar confirmed partnering Verstappen for 2026."
+        },
+        {
+          "id": "mercedes_2026",
+          "officialName": "Mercedes-AMG PETRONAS Formula One Team",
+          "confidence": "reasonable_estimate"
+        },
+        {
+          "id": "aston_martin_2026",
+          "officialName": "Aston Martin Aramco Formula One Team",
+          "confidence": "reasonable_estimate"
+        },
+        {
+          "id": "alpine_2026",
+          "officialName": "BWT Alpine Formula One Team",
+          "confidence": "reasonable_estimate"
+        },
+        {
+          "id": "williams_2026",
+          "officialName": "Atlassian Williams Racing",
+          "confidence": "reasonable_estimate"
+        },
+        {
+          "id": "racing_bulls_2026",
+          "officialName": "Racing Bulls",
+          "confidence": "confirmed",
+          "notes": "Arvid Lindblad joins Liam Lawson for 2026."
+        },
+        {
+          "id": "audi_2026",
+          "officialName": "Audi F1 Team",
+          "confidence": "confirmed",
+          "notes": "Successor to Kick Sauber; Gabriel Bortoleto and Nico Hulkenberg confirmed drivers."
+        },
+        {
+          "id": "haas_2026",
+          "officialName": "Haas F1 Team",
+          "confidence": "reasonable_estimate"
+        },
+        {
+          "id": "cadillac_2026",
+          "officialName": "Cadillac F1 Team",
+          "confidence": "confirmed",
+          "notes": "Brand-new 11th constructor, first major American manufacturer entry. Car: MAC-26 (Mario Andretti Cadillac). Ferrari customer power unit through 2028, own GM power unit from 2029. Drivers Sergio Perez (#11) and Valtteri Bottas (#77). As a first-year team with a customer engine and no F1-spec development history, its realistic strategy-relevant baseline is Backmarker-to-low-Midfield, not assumed competitive — flag for sim as a case where 'real-world debut team' should not default to Midfield.",
+          "source": "https://www.formula1.com/en/teams/cadillac ; https://www.skysports.com/f1/news/12040/13492528/cadillac-f1-all-you-need-to-know-about-new-2026-team-drivers-team-principal-engine-super-bowl-launch"
+        }
       ],
       "regulationChanges": [
         {
@@ -65,9 +169,9 @@
         {
           "change": "Active Aerodynamics (Cornering Mode / Straight Line Mode)",
           "confidence": "confirmed",
-          "detail": "Wings automatically shift between a high-downforce 'Cornering Mode' (engaged under braking/cornering/lift-off, and by default outside marked zones) and a low-drag 'Straight Line Mode' active only inside track-marked Straight Line Zones (functionally similar to where DRS zones used to be, but automatic, not driver-toggled the same way).",
+          "detail": "Wings automatically shift between a high-downforce 'Cornering Mode' (engaged under braking/cornering/lift-off, and by default outside marked zones) and a low-drag 'Straight Line Mode' active only inside track-marked Straight Line Zones (functionally similar to where DRS zones used to be, but automatic, not driver-toggled the same way). UPDATED 2026-07-12 (per sim's request for a real 2026-specific figure to replace their reused old-DRS-era ballpark): FIA's own published projections for the regulation are ~25% downforce reduction and ~18% drag reduction when in Straight Line Mode. Sourced to FIA/F1.com's 2026 regulations coverage, not in-game F1 25 telemetry — same caveat pattern as the other 2026 figures in this file (real-world regulation target, not confirmed as exactly what F1 25's Season Pack models in-game).",
           "strategyImplication": "Because SLM is automatic and zone-locked rather than a discretionary driver choice, it doesn't add a new strategic decision point the way old DRS enabling did — but it does change straight-line top speed and drag profile per track, which affects pit-lane-loss-relative overtaking difficulty and slipstream draft value. Net effect on strategy math is likely closer to 'zone geometry changes per track' than 'a new lever the strategist controls.'",
-          "source": "https://traxion.gg/how-f1-25s-2026-season-pack-replicates-the-new-regulations/"
+          "source": "https://traxion.gg/how-f1-25s-2026-season-pack-replicates-the-new-regulations/ ; https://www.raceteq.com/articles/2025/10/2026-straightline-mode-replacing-drs-simulations ; https://www.formula1.com/en/latest/article/fia-unveils-formula-1-regulations-for-2026-and-beyond-featuring-more-agile.75qJiYOHXgeJqsVQtDr2UB"
         },
         {
           "change": "MGU-H removed, MGU-K deployment nearly tripled",
@@ -121,7 +225,18 @@
       "confidence": "confirmed",
       "description": "Legendary real-world drivers recruitable into current-spec cars in Driver Career and My Team (both by the player and, new in F1 25, by AI-controlled teams).",
       "source": "https://www.ea.com/en/games/f1/f1-25/features/career-mode ; https://traxion.gg/f1-25s-full-driver-list-revealed-includes-f3-drivers-for-the-first-time/",
-      "roster": ["Ayrton Senna", "Michael Schumacher", "Jacques Villeneuve", "Jenson Button", "Mika Hakkinen", "Felipe Massa", "Mark Webber", "David Coulthard", "Callum Voisin", "Matias Zagazeta"],
+      "roster": [
+        "Ayrton Senna",
+        "Michael Schumacher",
+        "Jacques Villeneuve",
+        "Jenson Button",
+        "Mika Hakkinen",
+        "Felipe Massa",
+        "Mark Webber",
+        "David Coulthard",
+        "Callum Voisin",
+        "Matias Zagazeta"
+      ],
       "strategyNotes": "Icons drive whatever current-spec car they're recruited into (their own team's real 2025/2026-spec car) — there is no separate 'Icon car class' with its own pace/tyre model. Callum Voisin and Matias Zagazeta are original fictional legends created for the game (F1 25 debut), not real historical drivers; the other eight are real. This class should be modeled purely as a driver-skill layer on top of whichever F1 2025/2026 team car they're placed in, not a distinct car-class entry in sim's pace tables. AUDITED 2026-07-12 (coordinator's cross-class consistency check, prompted by the APXGP correction below): re-confirmed this is still correctly modeled — 'icons' was already excluded from sim's CarClassKey union and filtered out of visual's class-select list precisely because it isn't a distinct performance class. No change needed here; noted for the record that this entry was re-checked, not just left stale.",
       "confidenceForRosterCompleteness": "reasonable_estimate"
     },

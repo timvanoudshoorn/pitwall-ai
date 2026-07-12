@@ -274,5 +274,59 @@ describe('telemetry.ts', () => {
       expect(result.baselineProfile.carClass).toBe('f1_2026_season_pack');
       // Personal offset should account for the 2.75s category gap
     });
+
+    // Regression coverage for a 2026-07-12 coordinator-requested edge-case hardening pass:
+    // an unfiltered garbage/typo lap-time entry (e.g. "9.5" typed instead of "95", or a
+    // minutes-vs-seconds units mismatch) could compute a personal pace offset so large it
+    // drove downstream predicted laptimes to a non-physical ~12s/lap. See SIMLOG.md #15.
+    describe('implausible lap time handling (2026-07-12)', () => {
+      it('should reject a lap log that is entirely implausible relative to the track baseline', () => {
+        expect(() =>
+          importTelemetry({
+            lapTimesSec: [9.5, 9.4, 9.6, 9.5, 9.55], // ~10x too fast for a 90s track -- looks like a units/typo error
+            carClass: 'f1_2025',
+            performanceTier: 'backmarker',
+            baseLapTimeSec: 90,
+          }),
+        ).toThrow(/plausible range/);
+      });
+
+      it('should filter out a single implausible outlier while keeping the rest of a mostly-good log', () => {
+        const result = importTelemetry({
+          lapTimesSec: [88, 87.5, 88.2, 9.5, 87.9], // one obvious typo mixed into an otherwise clean log
+          carClass: 'f1_2025',
+          performanceTier: 'backmarker',
+          baseLapTimeSec: 90,
+        });
+        expect(result.assumptionFlags).toContain('telemetry_implausible_laps_filtered');
+        expect(result.representativeLapCount).toBe(4); // the 9.5s entry is excluded before outlier/median math
+        expect(Math.abs(result.personalPaceOffsetSec)).toBeLessThan(30); // stays in a sane range, not skewed by the typo
+      });
+
+      it('should NOT flag/filter a genuinely plausible slow or fast lap', () => {
+        const result = importTelemetry({
+          lapTimesSec: [90, 91, 89.5, 90.2], // ordinary race-pace spread, nothing implausible
+          carClass: 'f1_2025',
+          performanceTier: 'midfield',
+          baseLapTimeSec: 90,
+        });
+        expect(result.assumptionFlags).not.toContain('telemetry_implausible_laps_filtered');
+      });
+
+      it('should clamp an extreme personal pace offset rather than let it compound into a non-physical value', () => {
+        // Construct a scenario where a driver's laps are all consistent but WAY off the
+        // model's expectation -- individually each lap looks "plausible enough" not to be
+        // filtered, but the resulting offset should still be capped as a physical backstop.
+        const result = importTelemetry({
+          lapTimesSec: [45, 45.1, 44.9, 45.05], // exactly at the low edge of the plausibility band for a 90s track (50%)
+          carClass: 'f1_2025',
+          performanceTier: 'backmarker',
+          baseLapTimeSec: 90,
+        });
+        // MAX_PERSONAL_OFFSET_FRACTION is 50% of baseLapTimeSec (90s) = 45s magnitude cap
+        expect(Math.abs(result.personalPaceOffsetSec)).toBeLessThanOrEqual(45);
+        expect(result.assumptionFlags).toContain('personal_pace_offset_clamped_non_physical');
+      });
+    });
   });
 });

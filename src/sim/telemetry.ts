@@ -74,11 +74,29 @@ export interface TelemetryImportResult {
 
 const DEFAULT_OUTLIER_MULTIPLIER = 1.07; // PLACEHOLDER, borrowed from F1's real 107% rule — see outlierMultiplier doc comment
 const MIN_LAPS_REQUIRED = 3; // PLACEHOLDER floor below which a "representative pace" isn't a meaningful claim
+// PLACEHOLDER bounds, not measured — a raw lap-time entry (e.g. a text box the user pastes
+// numbers into) has no unit/typo validation, so a lap under 40% or over 250% of the track's
+// own baseLapTimeSec is treated as a data-entry error (wrong units, missing/extra digit,
+// decimal slip — "9.5" typed instead of "95") rather than a genuine slow/fast lap, and
+// excluded before the representative-pace calc even runs. Found via a coordinator-requested
+// stress pass, 2026-07-12: an unfiltered garbage entry could compute a personal pace offset
+// so large it drove downstream predicted laptimes to a non-physical ~12s/lap. See SIMLOG.md #15.
+const PLAUSIBLE_LAP_TIME_MIN_FRACTION = 0.4;
+const PLAUSIBLE_LAP_TIME_MAX_FRACTION = 2.5;
+// Defense-in-depth backstop (PLACEHOLDER) on the final offset itself, in case some
+// combination of individually-plausible-looking laps still compounds into an absurd
+// swing — a driver isn't genuinely 50%+ off the model's own pace assumption.
+const MAX_PERSONAL_OFFSET_FRACTION = 0.5;
 
 /**
  * Computes a personal pace offset from a raw lap-time log. Throws if fewer
  * than MIN_LAPS_REQUIRED laps are supplied — there's no meaningful
- * "representative pace" claim to make from 1-2 laps.
+ * "representative pace" claim to make from 1-2 laps. Also throws if, after
+ * filtering out laps implausible relative to `baseLapTimeSec` (likely
+ * data-entry errors, see `PLAUSIBLE_LAP_TIME_MIN_FRACTION`/`_MAX_FRACTION`
+ * above), fewer than `MIN_LAPS_REQUIRED` plausible laps remain — a log
+ * that's mostly typos/wrong-units shouldn't silently produce a confident-
+ * looking number.
  */
 export function importTelemetry(input: TelemetryImportInput): TelemetryImportResult {
   if (input.lapTimesSec.length < MIN_LAPS_REQUIRED) {
@@ -88,7 +106,19 @@ export function importTelemetry(input: TelemetryImportInput): TelemetryImportRes
   }
   const flags = ['telemetry_outlier_filter_placeholder'];
 
-  const sorted = [...input.lapTimesSec].sort((a, b) => a - b);
+  const plausibilityMin = input.baseLapTimeSec * PLAUSIBLE_LAP_TIME_MIN_FRACTION;
+  const plausibilityMax = input.baseLapTimeSec * PLAUSIBLE_LAP_TIME_MAX_FRACTION;
+  const plausibleLaps = input.lapTimesSec.filter((t) => t >= plausibilityMin && t <= plausibilityMax);
+  if (plausibleLaps.length !== input.lapTimesSec.length) {
+    flags.push('telemetry_implausible_laps_filtered');
+  }
+  if (plausibleLaps.length < MIN_LAPS_REQUIRED) {
+    throw new Error(
+      `importTelemetry: only ${plausibleLaps.length} of ${input.lapTimesSec.length} lap times fall within a plausible range of the track baseline (${input.baseLapTimeSec}s) — check for typos or a units mismatch (e.g. minutes vs seconds) in the lap log.`,
+    );
+  }
+
+  const sorted = [...plausibleLaps].sort((a, b) => a - b);
   const fastestLapSec = sorted[0];
   const threshold = fastestLapSec * (input.outlierMultiplier ?? DEFAULT_OUTLIER_MULTIPLIER);
   const kept = sorted.filter((t) => t <= threshold);
@@ -104,7 +134,14 @@ export function importTelemetry(input: TelemetryImportInput): TelemetryImportRes
   baselineProfile.assumptionFlags.forEach((f) => flags.push(f));
 
   const modelExpectedLapSec = input.baseLapTimeSec + baselineProfile.combinedPaceOffsetSec;
-  const personalPaceOffsetSec = round3(representativeLapSec - modelExpectedLapSec);
+  const rawPersonalPaceOffsetSec = round3(representativeLapSec - modelExpectedLapSec);
+  const maxOffsetMagnitude = input.baseLapTimeSec * MAX_PERSONAL_OFFSET_FRACTION;
+  const personalPaceOffsetSec = round3(
+    Math.max(-maxOffsetMagnitude, Math.min(maxOffsetMagnitude, rawPersonalPaceOffsetSec)),
+  );
+  if (personalPaceOffsetSec !== rawPersonalPaceOffsetSec) {
+    flags.push('personal_pace_offset_clamped_non_physical');
+  }
   const personalPaceOffsetPct = round3(personalPaceOffsetSec / input.baseLapTimeSec);
 
   const confidence: TelemetryImportResult['confidence'] =

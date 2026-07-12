@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { compareStrategies, perLapStrategyTrace, type RaceSimInput, type StrategyPlan } from '../strategyCompare';
+import {
+  compareStrategies,
+  evaluateSingleStrategy,
+  perLapStrategyTrace,
+  type RaceSimInput,
+  type StrategyPlan,
+} from '../strategyCompare';
 
 describe('strategyCompare.ts', () => {
   const baseInput: RaceSimInput = {
@@ -228,6 +234,41 @@ describe('strategyCompare.ts', () => {
       });
       expect(result.strategies[0].numStops).toBe(3);
       expect(result.strategies[0].stints).toHaveLength(4);
+    });
+
+    // Regression coverage for a 2026-07-12 coordinator-requested edge-case hardening pass
+    // (found via an ad hoc stress script across all class x tier x track x race-length
+    // combinations, not by inspection) -- see SIMLOG.md #15.
+    describe('edge-case hardening (2026-07-12)', () => {
+      it('should throw a clear, descriptive error on an empty strategies array, not a native array crash', () => {
+        expect(() => compareStrategies({ ...baseInput, strategies: [] })).toThrow(
+          'compareStrategies() requires at least one strategy candidate',
+        );
+      });
+
+      it('evaluateSingleStrategy should never produce a non-positive predicted laptime, however extreme personalPaceOffsetSec is', () => {
+        const { strategies: _ignored, ...contextOnly } = baseInput;
+        void _ignored;
+        const single = evaluateSingleStrategy(baseInput.strategies[0], {
+          ...contextOnly,
+          personalPaceOffsetSec: -200, // absurd direct override -- should never happen via telemetry.ts's own clamp, but a caller could pass this directly
+        });
+        expect(single.predictedTotalRaceTimeSeconds).toBeGreaterThan(0);
+        const avgLap = single.predictedTotalRaceTimeSeconds / baseInput.totalLaps;
+        // MIN_PHYSICAL_LAPTIME_FRACTION floor is 40% of baseLapTimeSec (90s here) = 36s/lap
+        expect(avgLap).toBeGreaterThanOrEqual(36);
+        expect(single.assumptionFlags).toContain('non_physical_laptime_clamped');
+      });
+
+      it('should NOT clamp/flag a normal-range personalPaceOffsetSec', () => {
+        const { strategies: _ignored, ...contextOnly } = baseInput;
+        void _ignored;
+        const single = evaluateSingleStrategy(baseInput.strategies[0], {
+          ...contextOnly,
+          personalPaceOffsetSec: -3, // a genuinely fast but plausible driver
+        });
+        expect(single.assumptionFlags).not.toContain('non_physical_laptime_clamped');
+      });
     });
   });
 

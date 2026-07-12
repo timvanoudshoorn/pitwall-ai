@@ -87,6 +87,10 @@ export interface RaceSimInput {
 }
 
 const DEFAULT_BASE_LAP_TIME_SEC = 90; // PLACEHOLDER generic track, see SIMLOG.md #5
+// PLACEHOLDER, not a real car-dynamics limit — absolute last-resort floor so an extreme
+// combination of offsets can never compute a non-physical (near-zero/negative) laptime.
+// See SIMLOG.md #15 and perLapStrategyTrace()'s use of it below.
+const MIN_PHYSICAL_LAPTIME_FRACTION = 0.4;
 const CLOSE_CALL_THRESHOLD_SEC = 2.0; // PLACEHOLDER — under this margin, flag as a close call, see SIMLOG.md #5
 
 interface ResolvedRaceContext {
@@ -137,6 +141,17 @@ function resolveRaceContext(input: Omit<RaceSimInput, 'strategies'>): ResolvedRa
 }
 
 export function compareStrategies(input: RaceSimInput): StrategyComparison {
+  // Hardening (coordinator-requested stress pass, 2026-07-12): an empty
+  // `strategies` array used to crash deep inside `evaluated.reduce()` with
+  // an opaque "Reduce of empty array with no initial value" — same
+  // underlying data (no candidates to compare) deserves a caller-facing
+  // explanation, not a native array-method stack trace.
+  if (input.strategies.length === 0) {
+    throw new Error(
+      'compareStrategies() requires at least one strategy candidate — received an empty strategies array.',
+    );
+  }
+
   const globalFlags = new Set<string>();
   const { baseLapTimeSec, degOptions, tierOffset, classOffset, contextFlags } =
     resolveRaceContext(input);
@@ -276,7 +291,19 @@ export function perLapStrategyTrace(
       );
       ff.forEach((f) => flags.add(f));
 
-      const lapTimeSec = ctx.baseLapTimeSec + ctx.perLapOffsetSec + tyreDelta + fuelDelta;
+      const rawLapTimeSec = ctx.baseLapTimeSec + ctx.perLapOffsetSec + tyreDelta + fuelDelta;
+      // Hardening (coordinator-requested stress pass, 2026-07-12): an
+      // extreme personalPaceOffsetSec (garbage/mistyped telemetry input,
+      // or any other combination of offsets stacking up) can drive a
+      // computed laptime toward zero or negative — not physically
+      // meaningful no matter how it got there. MIN_PHYSICAL_LAPTIME_FRACTION
+      // is a last-resort absolute floor, not a real car-dynamics limit;
+      // telemetry.ts's own input-side sanity filter (see SIMLOG.md #11)
+      // is the primary defense and should catch this before it gets here
+      // in the normal telemetry-import path — this clamp exists for any
+      // other caller/combination that lands here directly.
+      const lapTimeSec = Math.max(ctx.baseLapTimeSec * MIN_PHYSICAL_LAPTIME_FRACTION, rawLapTimeSec);
+      if (lapTimeSec !== rawLapTimeSec) flags.add('non_physical_laptime_clamped');
       totalTimeSec += lapTimeSec;
       cumulativeTimeSec.push(round3(totalTimeSec));
     }

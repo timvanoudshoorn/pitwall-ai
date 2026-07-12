@@ -61,7 +61,10 @@ export interface StopCountPlausibility {
   avgStintLaps: number;
   plausible: boolean;
   /** Populated when `plausible` is false — which floor it failed. */
-  reason?: 'below_min_stint_length' | 'stint_too_short_to_reach_wear_cliff';
+  reason?:
+    | 'below_min_stint_length'
+    | 'stint_too_short_to_reach_wear_cliff'
+    | 'forced_minimum_fallback_extremely_short_race';
 }
 
 const MIN_VIABLE_STINT_LAPS = 5; // PLACEHOLDER — floor #1, see module doc
@@ -96,6 +99,21 @@ export function plausibleStopCounts(
 
     results.push({ stopCount, numStints, avgStintLaps: round1(avgStintLaps), plausible, reason });
   }
+
+  // Hardening (found by a coordinator-requested stress pass, 2026-07-12): an
+  // extremely short race (well under ~10 laps -- reachable by combining a low
+  // race-length % with a short track, or any caller passing a small totalLaps
+  // directly) can fail floor #1 for EVERY stop count, leaving zero plausible
+  // candidates. A race, however short, still needs at least one strategy to
+  // recommend. Force the single stint count sim/visual's candidate set can
+  // actually build a plan around (1-stop -> two stints) to plausible in that
+  // case, clearly flagged as a forced fallback rather than a genuine "this
+  // is comfortably worth it" verdict -- callers/ai should hedge accordingly.
+  if (!results.some((r) => r.plausible) && results.length > 0) {
+    results[0].plausible = true;
+    results[0].reason = 'forced_minimum_fallback_extremely_short_race';
+  }
+
   return results;
 }
 

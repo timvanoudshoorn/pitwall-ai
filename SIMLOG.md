@@ -642,6 +642,115 @@ design the interactive editor UI against it — next step, see change log.
 
 ---
 
+## 15. Edge-case hardening pass (2026-07-12)
+
+**Prompted by:** the coordinator explicitly asked for genuine stress-testing
+across all car-class × track × tier combinations rather than another spot
+check, once the backlog was functionally complete — "does the math still
+make sense, or does something go non-physical." Built an ad hoc stress
+script (not committed — throwaway, findings captured here + as permanent
+vitest cases instead) that ran every `CarClassKey`/`PerformanceTierKey`
+combination × 5 abrasiveness ratings × 3 representative `baseLapTimeSec`
+values through `compareStrategies()`, every race-length percentage 1-100%
+(not just the UI's 25/35/50/75/100 steps) across 5 real track lap counts
+through `stopCountPlausibility.ts`, `safetyCarProbability()` across every
+qualifying format × several SC/VSC override levels, and
+`importTelemetry()`/`evaluateSingleStrategy()` under normal, garbage, and
+deliberately extreme personal-pace inputs. Found and fixed 4 real issues:
+
+1. **Empty plausible-stop-count set on very short races.** Scanning every
+   race-length percentage boundary (not just 25/35/50/75/100) found that
+   totalLaps as low as 1-9 laps — reachable by combining a short track
+   with a low race-length percentage, or any caller passing a small
+   `totalLaps` directly — made EVERY stop count fail `MIN_VIABLE_STINT_LAPS`,
+   so `plausibleStopCountNumbers()` returned an empty array. Downstream,
+   `strategyCandidates.ts` would then generate zero candidates. Fixed in
+   `stopCountPlausibility.ts`: if literally nothing clears the normal
+   floors, the lowest stop count (1-stop, the only sequence
+   `strategyCandidates.ts` can build a plan around at that length) is now
+   forced plausible with a distinct `forced_minimum_fallback_extremely_short_race`
+   reason — honest about being a compromise, not silently presented as a
+   comfortable recommendation. A race, however short, still needs at
+   least one strategy to recommend.
+
+2. **`compareStrategies()` crashed on an empty `strategies` array** with
+   an opaque native `"Reduce of empty array with no initial value"` error
+   from deep inside the ranking logic (`evaluated.reduce(...)`) — the
+   *symptom* of issue #1 propagating downstream, but a real hardening gap
+   in its own right for any other caller that could hit it (e.g. a UI bug
+   filtering candidates down to nothing for an unrelated reason). Added
+   an explicit upfront check that throws a clear, descriptive error
+   instead.
+
+3. **Garbage/mistyped telemetry produced non-physical predicted
+   laptimes.** `importTelemetry()` had no sanity check on the raw lap
+   times themselves — a plausible real-world mistake (typing "9.5"
+   instead of "95", or a minutes-vs-seconds units slip) computed a
+   personal pace offset so large (-82.3s/lap on a 90s baseline) that
+   downstream `compareStrategies()` predicted an average laptime of
+   ~12.3s — obviously not a real F1 laptime. Fixed with two layers in
+   `telemetry.ts`: (a) an input-side plausibility filter — laps outside
+   40%-250% of `baseLapTimeSec` are excluded before the outlier/median
+   calc even runs (flagged `telemetry_implausible_laps_filtered`), and
+   the whole call throws a clear "check for typos or a units mismatch"
+   error if fewer than `MIN_LAPS_REQUIRED` plausible laps remain after
+   that filter; (b) a defense-in-depth clamp on the *final*
+   `personalPaceOffsetSec` to ±50% of `baseLapTimeSec`
+   (`MAX_PERSONAL_OFFSET_FRACTION`, flagged
+   `personal_pace_offset_clamped_non_physical`) in case some combination
+   of individually-plausible laps still compounds into an absurd number.
+   A single obvious typo mixed into an otherwise-clean log is now
+   correctly filtered out rather than either corrupting the whole
+   calculation or rejecting the entire log.
+
+4. **No physical floor on computed laptime anywhere in the shared
+   per-lap loop.** Even with telemetry.ts's own clamp, `RaceSimInput`/
+   `evaluateSingleStrategy()`'s `personalPaceOffsetSec` field is directly
+   settable by any caller (not just via `importTelemetry()`) — a
+   sufficiently extreme direct value could still drive a lap's computed
+   time toward zero or negative, which is never physically meaningful
+   regardless of how it got there. Added an absolute last-resort floor in
+   `perLapStrategyTrace()`: a lap's time can never compute below
+   `MIN_PHYSICAL_LAPTIME_FRACTION` (40%) of `baseLapTimeSec`, flagged
+   `non_physical_laptime_clamped` when it engages. Verified this is a
+   true last resort, not a normal-operation clamp — a real ~8s
+   circuit-record correction (data's Singapore lap-record upgrade,
+   commit 6f084cd, landed mid-pass) came nowhere near triggering it.
+
+**Areas stress-tested that found NO issues** (worth recording so a future
+pass doesn't re-walk the same ground from scratch): F2's compressed
+`tierPaceRangeScale` (0.25x) combined with every abrasiveness rating 1-5
+and all three `baseLapTimeSec` reference points — no non-finite/negative/
+out-of-band results at any combination. `safetyCarProbability()`'s
+qualifying-format multiplier combined with SC/VSC override values from 0
+to 100 — stayed correctly bounded to [0,100] at every combination (the
+existing `Math.min(0.999, ...)` guard on the Poisson conversion already
+handled the 100%-probability edge correctly). Every `CarClassKey` ×
+`PerformanceTierKey` combination's average predicted laptime stayed
+within a 0.3x-3x band of its `baseLapTimeSec` — no combination is close
+to non-physical without deliberately extreme/garbage input.
+
+**Permanent regression coverage added** (24 new test cases, full suite
+now 203 tests / 9 files, all green): `stopCountPlausibility.test.ts` (new
+file) — the extremely-short-race fallback across totalLaps 1-10, the
+forced-fallback reason tag, and a high-wear-vs-low-wear widening check.
+`strategyCompare.test.ts` — the empty-array error message and the
+extreme/normal personalPaceOffsetSec clamp behavior. `telemetry.test.ts`
+— the fully-implausible-log rejection, the single-typo filtering case,
+and the final-offset clamp.
+
+**Placeholder audit (second half of the coordinator's ask):** reviewed
+every `**Placeholders:**` section above for constants `data` could now
+plausibly source real values for, as opposed to sim's own invented
+modeling/UX-judgment constants (confidence thresholds, close-call
+margins, curve *shapes* — those aren't "facts" to source). Messaged data
+directly with a prioritized list (SC/VSC period duration, SC/VSC pit-loss
+factor, 2026 Active Aero drag-reduction %, generic pit-stop stationary
+time) rather than repeating it here — see their reply/DATALOG.md for
+what came of it.
+
+---
+
 ## Change log
 
 - **2026-07-09:** Initial build of all 9 backlog items (degradation,
@@ -725,3 +834,11 @@ design the interactive editor UI against it — next step, see change log.
   surfacing through a previously-hardcoded test, not a regression).
   Committed b41fff6. `DEFAULT_TIER_BY_CLASS` in `performanceTier.ts`
   needed no change (never had an `apxgp` entry).
+- **2026-07-12 (later still):** Coordinator-requested edge-case hardening
+  pass across all class×track×tier combinations found and fixed 4 real
+  issues (empty plausible-stop-count set on very short races,
+  `compareStrategies()` crashing on an empty strategies array, garbage
+  telemetry producing non-physical laptimes, no absolute physical floor
+  on computed laptime) — see item 15 for full detail. Added 24 permanent
+  regression tests (203 total, 9 files). Also messaged data a prioritized
+  list of remaining placeholder constants worth real-world sourcing.

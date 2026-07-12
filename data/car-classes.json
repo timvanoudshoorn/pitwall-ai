@@ -6,7 +6,10 @@
       "reasonable_estimate": "Inferred from confirmed facts plus general motorsport knowledge; not stated verbatim by a primary source.",
       "placeholder": "No usable source found yet; needs follow-up research or a sim-side default."
     },
-    "lastReviewed": "2026-07-09"
+    "lastReviewed": "2026-07-12",
+    "corrections": {
+      "2026-07-12_apxgp_folded_into_f1_2025": "APXGP was previously modeled as its own top-level car class (id 'apxgp', sibling to f1_2025/f1_2026/f2/f1_world_car). A user correctly flagged this as wrong: 'that's just an F1 2025 car.' Verified via research (see the apxgp team entry's notes under classes[0].teams) -- in the Career Mode/My Team gameplay this app models, APXGP uses F1 25's standard My Team/multiplayer car model with an APXGP livery, not a distinct chassis; only the six scripted movie-tie-in missions get a bespoke car model, and those are out of scope for this app's season/track/tier strategy flow. Folded apxgp into f1_2025.teams (same treatment as Konnersport, which was already correctly modeled this way) and removed it as a standalone class. This is a breaking change for sim's CarClassKey union and CAR_CLASSES record (src/sim/constants.ts), and for visual's DATA_ID_TO_CAR_CLASS_KEY/CAR_CLASS_TO_DATA_ID mappings and class-select screen (src/lib/dataAdapters.ts, src/lib/raceSimAdapter.ts, src/screens/CarClassTrackSelectScreen.tsx) -- coordinated directly with both teammates rather than editing their files."
+    }
   },
   "classes": [
     {
@@ -26,9 +29,11 @@
         {"id": "racing_bulls_2025", "officialName": "Visa Cash App RB Formula One Team", "confidence": "confirmed", "notes": "Sponsor-naming churns mid-season historically; re-verify before each season update."},
         {"id": "kick_sauber_2025", "officialName": "Stake F1 Team Kick Sauber", "confidence": "confirmed", "notes": "Transitions to Audi works team for 2026 — see f1_2026 class."},
         {"id": "haas_2025", "officialName": "MoneyGram Haas F1 Team", "confidence": "confirmed"},
-        {"id": "konnersport", "officialName": "Konnersport", "confidence": "confirmed", "notes": "Fictional 11th team from Braking Point, selectable as an alternative 11th-team slot to APXGP in Driver Career/My Team. Principal Casper Akkerman, liaison Devon Butler; drivers Callie Mayer and Aiden Jackson in the Braking Point narrative. Strategy-relevant baseline: game narrative frames Konnersport as a genuine title threat to Red Bull, i.e. a Top Tier-capable car once its own career arc develops, not a fixed backmarker.", "source": "https://en.wikipedia.org/wiki/F1_25 ; https://www.ea.com/en/games/f1/f1-25/features/braking-point-3"}
+        {"id": "konnersport", "officialName": "Konnersport", "confidence": "confirmed", "notes": "Fictional 11th team from Braking Point, selectable as an alternative 11th-team slot to APXGP in Driver Career/My Team. Principal Casper Akkerman, liaison Devon Butler; drivers Callie Mayer and Aiden Jackson in the Braking Point narrative. Strategy-relevant baseline: game narrative frames Konnersport as a genuine title threat to Red Bull, i.e. a Top Tier-capable car once its own career arc develops, not a fixed backmarker.", "source": "https://en.wikipedia.org/wiki/F1_25 ; https://www.ea.com/en/games/f1/f1-25/features/braking-point-3"},
+        {"id": "apxgp", "officialName": "APXGP (F1 THE MOVIE tie-in)", "confidence": "confirmed", "notes": "Fictional team from the 2025 Apple Original Films movie 'F1', selectable as an alternative 11th-team slot to Konnersport in Driver Career/My Team (Iconic Edition / Iconic Edition Upgrade content). Drivers: Sonny Hayes (Brad Pitt) and Joshua Pearce (Damson Idris). CORRECTED 2026-07-12 (was previously modeled as its own top-level car class, id 'apxgp' — see _meta.corrections below for why that was wrong): in the ongoing Career Mode/My Team gameplay this app models, the APXGP car uses F1 25's standard My Team/multiplayer car model with an APXGP livery/sponsor skin — mechanically the same chassis as any other f1_2025 team, not a distinct performance class. (APXGP does get a bespoke, uniquely-modeled car in the six movie-inspired scenario missions — Silverstone intro free to all, then Monza/Zandvoort/Mexico/Spa/Abu Dhabi as Iconic Edition content — but those are one-off scripted missions outside the season/track/tier strategy flow this app is built around, so that distinction isn't strategy-relevant here.) No official pace baseline published for the Career Mode version either way; movie narrative frames APXGP as a struggling backmarker team on an underdog redemption arc, so Backmarker-to-Midfield is a reasonable tier-slider default pending an explicit dev statement, same treatment as Konnersport's narrative-driven default — reasonable_estimate, not confirmed.", "source": "https://www.ea.com/en/games/f1/f1-25/news/f1-25-f1-movie ; https://www.gamereactor.eu/how-fast-will-brad-pitts-apxgp-car-be-in-f1-25-1535133/ ; https://www.espn.com/gaming/story/_/id/45253044/ea-sports-f1-25-braking-point-f1-movie"}
       ],
-      "strategyNotes": "Pace order is not fixed in-game (depends on user's own team/upgrades in career modes); for AI-recruited or non-player teams the game's own AI pace model governs. Treat per-team absolute pace as NOT something this app should hardcode — use the Performance Tier slider (see performance-tiers.md) instead, seeded by real-world 2025 competitive order only as flavor/default suggestion."
+      "strategyNotes": "Pace order is not fixed in-game (depends on user's own team/upgrades in career modes); for AI-recruited or non-player teams the game's own AI pace model governs. Treat per-team absolute pace as NOT something this app should hardcode — use the Performance Tier slider (see performance-tiers.md) instead, seeded by real-world 2025 competitive order only as flavor/default suggestion.",
+      "tierSliderApplies": true
     },
     {
       "id": "f1_2026",
@@ -89,7 +94,8 @@
       "openQuestions": [
         "In-game (F1 25 2026 Season Pack specifically) laptime delta between 2025-spec and 2026-spec cars is still not directly confirmed by EA. However, real-world 2026-vs-2025 data now exists and is a reasonable placeholder basis: FIA pre-season simulation predicted 2026 cars ~1.0-2.5s slower than 2025 cars per lap (source: Nikolas Tombazis, FIA single-seater technical director, via Autosport forums thread citing FIA statements). Actual 2026 Australian GP (Melbourne) results came in slower than that prediction: George Russell's 2026 pole (1:18.518) was ~3.4s slower than Lando Norris's 2025 Melbourne pole, and Verstappen's 2026 fastest lap was ~2.1s slower than the 2025 fastest lap. Recommend sim use a reasonable_estimate range of roughly 2-3.5s slower per lap at a 'typical' circuit for 2026-spec vs 2025-spec cars if a laptime baseline is needed now, sourced to real-world 2026 season data rather than in-game telemetry, and revisit once real F1 25 2026-pack lap times are directly observable/comparable in-game.",
         "source_for_2026_laptime_delta: https://forums.autosport.com/topic/228681-nikolas-tombazis-says-2026-cars-to-be-15s-25s-slower-than-2025-cars/ ; https://www.gpfans.com/en/f1-news/1078064/f1-cars-2026-how-much-slower-australian-grand-prix/"
-      ]
+      ],
+      "tierSliderApplies": true
     },
     {
       "id": "f2",
@@ -106,16 +112,8 @@
           "strategyImplication": "Single-spec chassis means F2's tyre/pace baseline is far more homogeneous across the grid than F1 — driver/team skill dominates over car variance. The performance-tier slider matters less for F2 strategically than for the F1 classes; still useful for AI opponent difficulty scaling, but shouldn't be read as 'car development tier' the way it is for F1."
         }
       ],
-      "openQuestion": "Whether F1 25 / the 2026 Season Pack actually labels F2 content as a distinct '2024' vs '2026' chassis in its UI is unconfirmed — no source found describing two separate F2 car classes in-game. Sim/AI should NOT assume two distinct F2 tyre/pace profiles exist until this is confirmed from in-game UI or patch notes; treat F1 25's F2 as one class pending correction."
-    },
-    {
-      "id": "apxgp",
-      "name": "APXGP (F1 THE MOVIE tie-in, Iconic Edition)",
-      "confidence": "confirmed",
-      "description": "Fictional team from the 2025 Apple Original Films movie 'F1', playable as an 11th-team alternative to Konnersport (Iconic Edition / Iconic Edition Upgrade content). Drivers: Sonny Hayes (Brad Pitt's character) and Joshua Pearce (Damson Idris's character).",
-      "source": "https://www.ea.com/en/games/f1/f1-25/news/f1-25-f1-movie ; https://www.ea.com/news/f1-25-movie-game-crossover ; https://www.espn.com/gaming/story/_/id/45253044/ea-sports-f1-25-braking-point-f1-movie",
-      "strategyNotes": "Playable in My Team 2.0 as team owner (inheriting car + both drivers) and via six movie-inspired scenario missions (Silverstone intro free to all, then Monza/Zandvoort/Mexico/Spa/Abu Dhabi episodes as Iconic Edition content). No official pace baseline published; movie narrative frames APXGP as a struggling backmarker team on an underdog redemption arc, so Backmarker-to-Midfield is a reasonable default pending an explicit dev statement — marking as reasonable_estimate, not confirmed.",
-      "confidenceForBaseline": "reasonable_estimate"
+      "openQuestion": "Whether F1 25 / the 2026 Season Pack actually labels F2 content as a distinct '2024' vs '2026' chassis in its UI is unconfirmed — no source found describing two separate F2 car classes in-game. Sim/AI should NOT assume two distinct F2 tyre/pace profiles exist until this is confirmed from in-game UI or patch notes; treat F1 25's F2 as one class pending correction.",
+      "tierSliderApplies": true
     },
     {
       "id": "icons",
@@ -124,7 +122,7 @@
       "description": "Legendary real-world drivers recruitable into current-spec cars in Driver Career and My Team (both by the player and, new in F1 25, by AI-controlled teams).",
       "source": "https://www.ea.com/en/games/f1/f1-25/features/career-mode ; https://traxion.gg/f1-25s-full-driver-list-revealed-includes-f3-drivers-for-the-first-time/",
       "roster": ["Ayrton Senna", "Michael Schumacher", "Jacques Villeneuve", "Jenson Button", "Mika Hakkinen", "Felipe Massa", "Mark Webber", "David Coulthard", "Callum Voisin", "Matias Zagazeta"],
-      "strategyNotes": "Icons drive whatever current-spec car they're recruited into (their own team's real 2025/2026-spec car) — there is no separate 'Icon car class' with its own pace/tyre model. Callum Voisin and Matias Zagazeta are original fictional legends created for the game (F1 25 debut), not real historical drivers; the other eight are real. This class should be modeled purely as a driver-skill layer on top of whichever F1 2025/2026 team car they're placed in, not a distinct car-class entry in sim's pace tables.",
+      "strategyNotes": "Icons drive whatever current-spec car they're recruited into (their own team's real 2025/2026-spec car) — there is no separate 'Icon car class' with its own pace/tyre model. Callum Voisin and Matias Zagazeta are original fictional legends created for the game (F1 25 debut), not real historical drivers; the other eight are real. This class should be modeled purely as a driver-skill layer on top of whichever F1 2025/2026 team car they're placed in, not a distinct car-class entry in sim's pace tables. AUDITED 2026-07-12 (coordinator's cross-class consistency check, prompted by the APXGP correction below): re-confirmed this is still correctly modeled — 'icons' was already excluded from sim's CarClassKey union and filtered out of visual's class-select list precisely because it isn't a distinct performance class. No change needed here; noted for the record that this entry was re-checked, not just left stale.",
       "confidenceForRosterCompleteness": "reasonable_estimate"
     },
     {
@@ -134,7 +132,9 @@
       "description": "A generic, non-team-specific car used in F1 World mode (the game's central hub for solo/multiplayer/Ranked activity), separate from any real 2025/2026 team livery. Players customize and upgrade this car within F1 World progression; Ranked and some F1 World events lock it to fixed setups for competitive parity.",
       "source": "https://en.wikipedia.org/wiki/F1_25 ; https://help.ea.com/en/articles/f1/f1-25/car-setups-guide/",
       "strategyNotes": "No official baseline pace tier found published by EA. Because F1 World explicitly exists to create a setup-neutral, fair-matchmaking competitive environment (fixed setups in Ranked, License-based skill matchmaking), its car is best modeled as a fixed Midfield baseline by default — not because that's confirmed, but because a competitively-neutral generic car with progression-based upgrades logically starts below Top Tier and is designed not to feel like a Backmarker either. Sim's placeholder of Midfield for F1 World is a reasonable default; this is not yet a confirmed fact and should be revisited if EA publishes concrete stats.",
-      "confidenceForBaseline": "reasonable_estimate"
+      "confidenceForBaseline": "reasonable_estimate",
+      "tierSliderApplies": true,
+      "tierSliderAppliesResearch2026_07_12": "A user flagged that F1 World cars should have no performance-tier variance at all (all identical pace), which would mean removing the tier slider for this class entirely. Investigated and did NOT confirm this -- found evidence of real progression-driven pace variance in standard F1 World play: F1 World has a License/'Technical Level' progression stat and equippable Vehicle Parts that materially affect car performance (EA's own car-setups help article documents Vehicle Parts affecting handling/tyre-wear stats; multiple EA Forums bug reports -- e.g. 'F1 25 World Car Slow At 600-1000 Tech', 'F1 25 - F1 World Car Extremely Slow Despite High Technical Level' -- corroborate that Technical Level is meant to scale car pace, i.e. genuine upgrade-driven variance exists, not a fixed baseline). The ONLY place cars are confirmed locked to a fixed/identical setup is Ranked mode and 'some F1 World events' specifically, for competitive parity -- not F1 World as a whole. This is structurally the same shape as F1 2025/2026's My Team pace drifting across a season, which the plan already models via the tier slider -- so keeping tierSliderApplies=true for f1_world_car is the factually correct call, not an oversight to fix. Recommend the tier slider here be read as 'where is my F1 World Technical Level/car progression currently,' same interpretive frame as My Team. If a future 'Ranked mode' toggle is ever built, that specific mode (not the class) is where fixed-parity behavior belongs -- flagged as a possible v2 UX idea, not implemented now since it's out of scope for a single boolean fix."
     }
   ]
 }

@@ -44,10 +44,10 @@ export function RaceParametersScreen({ selection, onChange }: RaceParametersScre
               key={pct}
               type="button"
               onClick={() => patchRP({ raceLengthPct: pct })}
-              className={`rounded-sm border p-3 text-center transition-colors ${
+              className={`pit-clip-sm pit-pressable relative p-3 text-center ${
                 rp.raceLengthPct === pct
-                  ? 'border-pit-accent bg-pit-panel-raised text-pit-accent'
-                  : 'border-pit-border bg-pit-bg text-pit-text hover:border-pit-border-strong'
+                  ? 'pit-accent-edge border border-pit-accent bg-pit-panel-raised text-pit-accent'
+                  : 'border border-pit-border bg-pit-bg text-pit-text hover:border-pit-border-strong'
               }`}
             >
               <div className="tabular text-lg font-bold">{pct}%</div>
@@ -70,11 +70,11 @@ export function RaceParametersScreen({ selection, onChange }: RaceParametersScre
                 key={f.id}
                 type="button"
                 onClick={() => patchRP({ qualifyingFormat: f.id })}
-                className={`rounded-sm border p-3 text-left transition-colors ${
-                  isActive ? 'border-pit-accent bg-pit-panel-raised' : 'border-pit-border bg-pit-bg hover:border-pit-border-strong'
+                className={`pit-clip-sm pit-pressable relative p-3 text-left ${
+                  isActive ? 'pit-accent-edge border border-pit-accent bg-pit-panel-raised' : 'border border-pit-border bg-pit-bg hover:border-pit-border-strong'
                 }`}
               >
-                <div className={`text-sm font-bold ${isActive ? 'text-pit-accent' : 'text-pit-text'}`}>{f.label}</div>
+                <div className={`pit-hud-text text-sm ${isActive ? 'text-pit-accent' : 'text-pit-text'}`}>{f.label}</div>
                 <div className="mt-1 text-[11px] text-pit-text-secondary">{f.description}</div>
               </button>
             );
@@ -91,12 +91,12 @@ export function RaceParametersScreen({ selection, onChange }: RaceParametersScre
                 key={id}
                 type="button"
                 onClick={() => patchRP({ weather: id })}
-                className={`flex flex-col items-center gap-1.5 rounded-sm border p-3 transition-colors ${
-                  isActive ? 'border-pit-accent bg-pit-panel-raised text-pit-accent' : 'border-pit-border bg-pit-bg text-pit-text hover:border-pit-border-strong'
+                className={`pit-clip-sm pit-pressable relative flex flex-col items-center gap-1.5 p-3 ${
+                  isActive ? 'pit-accent-edge border border-pit-accent bg-pit-panel-raised text-pit-accent' : 'border border-pit-border bg-pit-bg text-pit-text hover:border-pit-border-strong'
                 }`}
               >
                 <Icon size={20} />
-                <span className="text-xs font-semibold">{label}</span>
+                <span className="pit-hud-text not-italic text-xs">{label}</span>
               </button>
             );
           })}

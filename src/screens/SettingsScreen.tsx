@@ -82,10 +82,10 @@ export function SettingsScreen({ selection, onChange }: SettingsScreenProps) {
           <button
             type="button"
             onClick={() => patchPersonalPace({ enabled: !personalPace.enabled })}
-            className={`rounded-sm border px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`pit-clip-sm pit-pressable relative px-3 py-1.5 text-xs pit-hud-text not-italic ${
               personalPace.enabled
-                ? 'border-pit-accent bg-pit-panel-raised text-pit-accent'
-                : 'border-pit-border text-pit-text-secondary hover:border-pit-border-strong'
+                ? 'pit-accent-edge border border-pit-accent bg-pit-panel-raised text-pit-accent'
+                : 'border border-pit-border text-pit-text-secondary hover:border-pit-border-strong'
             }`}
           >
             {personalPace.enabled ? 'Enabled' : 'Disabled'}

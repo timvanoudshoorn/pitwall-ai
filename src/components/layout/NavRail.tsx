@@ -41,9 +41,9 @@ export function NavRail() {
           to={to}
           end={end}
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1 border-l-2 px-0.5 py-2.5 text-center text-[9px] font-medium tracking-wide transition-colors sm:px-1 sm:py-3 sm:text-[10px] ${
+            `pit-hud-text flex flex-col items-center gap-1 border-l-2 px-0.5 py-2.5 text-center text-[9px] tracking-wide not-italic transition-colors sm:px-1 sm:py-3 sm:text-[10px] ${
               isActive
-                ? 'border-pit-accent bg-pit-panel-raised text-pit-text'
+                ? 'border-pit-accent bg-pit-panel-raised text-pit-accent shadow-[inset_2px_0_10px_-6px_var(--color-pit-accent)]'
                 : 'border-transparent text-pit-text-muted hover:bg-pit-panel-raised hover:text-pit-text-secondary'
             }`
           }

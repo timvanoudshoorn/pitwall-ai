@@ -98,28 +98,35 @@ export function StrategyComparisonScreen({ selection }: { selection: AppSelectio
 function StrategyCard({ strategy, isRecommended }: { strategy: StrategyCandidate; isRecommended: boolean }) {
   return (
     <div
-      className={`rounded-sm border p-3.5 ${
-        isRecommended ? 'border-pit-accent bg-pit-panel-raised' : 'border-pit-border bg-pit-bg'
+      className={`pit-clip-sm pit-pressable pit-carbon relative border p-3.5 ${
+        isRecommended
+          ? 'pit-accent-edge border-pit-accent bg-pit-panel-raised shadow-[0_0_18px_-6px_var(--color-pit-accent)]'
+          : 'border-pit-border bg-pit-bg'
       }`}
     >
       <div className="flex items-center justify-between">
         <div>
-          <div className={`text-sm font-bold ${isRecommended ? 'text-pit-accent' : 'text-pit-text'}`}>
+          <div className={`pit-hud-text text-base ${isRecommended ? 'text-pit-accent' : 'text-pit-text'}`}>
             {strategy.numStops}-Stop
           </div>
           <div className="tabular text-[11px] text-pit-text-muted uppercase tracking-wide">
             {strategy.confidence ?? 'unrated'} confidence
           </div>
         </div>
-        <div className="tabular text-right">
-          <div className="text-lg font-bold text-pit-text">
-            {strategy.deltaToBestSeconds === 0 ? (
-              <span className="text-status-good">BEST</span>
-            ) : (
-              `+${strategy.deltaToBestSeconds.toFixed(1)}s`
-            )}
+        {/* HUD delta-timer readout — bordered chip with a glow on the
+            leading candidate, echoing an F1 broadcast/in-race delta timer
+            rather than plain right-aligned numerals. */}
+        <div
+          className={`pit-clip-sm tabular border px-2.5 py-1.5 text-right ${
+            strategy.deltaToBestSeconds === 0
+              ? 'border-status-good/60 bg-status-good/10 shadow-[0_0_10px_-3px_var(--color-status-good)]'
+              : 'border-pit-border bg-pit-bg/60'
+          }`}
+        >
+          <div className={`text-xl font-bold leading-none ${strategy.deltaToBestSeconds === 0 ? 'text-status-good' : 'text-pit-text'}`}>
+            {strategy.deltaToBestSeconds === 0 ? 'BEST' : `+${strategy.deltaToBestSeconds.toFixed(1)}s`}
           </div>
-          <div className="text-[11px] text-pit-text-muted">
+          <div className="mt-0.5 text-[10px] text-pit-text-muted">
             {(strategy.predictedTotalRaceTimeSeconds / 60).toFixed(1)} min total
           </div>
         </div>

@@ -595,3 +595,104 @@ picked up mid-screenshot-task per the coordinator's explicit
   of visual hardcoding `true` for every class.
 - `npx tsc --noEmit`, `npm run build` (main chunk 303KB, no chunk-size
   regression), and the full vitest suite (179 tests) all clean/green.
+
+## 2026-07-12 (later still) — Genuine design elevation pass: EA F1 menu reference
+
+Coordinator's direction after the user called the app "insanely good" as
+the bar, not just bug-free: everything fixed so far (overflow, TierDial
+depth, race-length) was necessary but incremental, and this was cleared as
+a real design exercise, not another round of patches. Grounded choices in
+an actual reference (EA F1 game menu chrome) rather than a generic
+dark-mode dashboard template, per the coordinator's explicit ask.
+
+**Typography.** Added `--font-hud` (`src/index.css`): "Bahnschrift" (Windows'
+built-in DIN-style condensed variable font) / "SF Compact Display" (Apple's
+built-in condensed system face) ahead of the existing safe stack — both are
+fonts the OS ships, addressed by CSS family name only, zero network fetch,
+so CLAUDE.md's "no webfont network dependency" constraint holds exactly as
+before. This app's real deployed target is a Capacitor iOS WKWebView, where
+SF Compact Display resolves for real. New `.pit-hud-text` utility (condensed
++ italic + weight 700) applied to every Panel eyebrow/title, the TopBar
+wordmark, NavRail labels, and every selectable-card label app-wide —
+**never** to `.tabular` numeric readouts, which are explicitly untouched
+per CLAUDE.md's non-negotiable numeric-integrity rule. Headless-Chromium
+verification renders the Segoe UI italic-bold fallback (neither Bahnschrift
+nor SF Compact exist in that environment) — noting honestly that the actual
+condensed character only shows on a real Windows or iOS device, not in any
+screenshot I could take myself this session.
+
+**Panel chrome — the single highest-leverage change.** `src/components/ui/Panel.tsx`
+(used by literally every screen) now has: angular diagonal-cut corners
+(`.pit-clip-lg`, top-right/bottom-left only — a directional cut reads as
+technical/aggressive the way a symmetric all-four-corner octagon wouldn't),
+a near-imperceptible carbon-fiber basket-weave texture (`.pit-carbon`, two
+`repeating-linear-gradient`s at ~2% opacity — verified legible over both
+panel surface tones, not decoration that fights text contrast), a short
+accent bar ahead of the eyebrow/title instead of a plain label, and a brief
+fade+rise reveal on mount (`.pit-panel-in`, 260ms, gated behind
+`prefers-reduced-motion` in `index.css`). Corner ticks now mark only the two
+UN-clipped corners in accent purple (a HUD-reticle detail) instead of all
+four in muted border color.
+
+**Selection/active state — accent glow edge, not just flat fill.** New
+`.pit-accent-edge` utility: a gradient-fade underline with a soft
+box-shadow glow, replacing "flat purple background fill" as the sole
+active-state signal on every selectable card (Car Class, Track, Race
+Parameters' distance/qualifying/weather buttons, Main Menu's primary CTA,
+Mode tabs). Applied via `.pit-clip-sm` (the same angular-cut geometry at a
+smaller radius) + `.pit-pressable` (120ms press-down scale + eased color/
+shadow transitions, gated behind `prefers-reduced-motion`) so every
+button-shaped interactive element in the app now has real press feedback,
+not color-transition-only.
+
+**Hierarchy — StrategyCard's delta reading is now a real HUD instrument.**
+`StrategyComparisonScreen.tsx`'s per-candidate delta number (BEST / +9.4s /
++14.4s) moved from plain right-aligned text into its own bordered,
+angular-cut chip — green-glow-bordered for the leading candidate (echoing
+an F1 broadcast delta-timer/personal-best convention), neutral for the
+rest — so the single most important number on that screen now reads at a
+different visual weight than the confidence/min-total supporting text
+beneath it, not the same weight as everything else on the card.
+`StatusBadge.tsx` picked up the same `.pit-clip-sm` + soft glow treatment
+for consistency across every "chip" in the app — the four reserved status
+hues (`good`/`warning`/`serious`/`critical`) are completely untouched, only
+the shape/glow changed, per CLAUDE.md's explicit "don't hand-pick a
+replacement hue" rule.
+
+**TopBar — HUD readout chips instead of plain label/value text.** Each
+summary field (CLASS/TIER/TRACK/LAPS) is now its own small angular-cut,
+bordered instrument rather than a flat text pair — closer to an in-race
+delta-timer/sector-split readout than a status line.
+
+**Also landed in the same pass:** swapped `AIExplanationScreen.tsx`'s
+inline `buildTemplateExplanation()` (a duplicate, less-polished copy) for
+ai's real `generateTemplateExplanation()` (`src/ai/templateExplain.ts`,
+their 2026-07-12 rewrite) — one-line call-site change, removed ~30 lines
+of now-dead duplicate logic, the visible explanation text is now the
+sharper race-engineer voice ai actually wrote.
+
+**Verification.** Iterated with real headless-Chromium screenshots at each
+step (not guessing blind) — self-critiqued and pushed further after the
+first pass looked like "generic dark dashboard with italics" rather than
+"EA F1 menu." Final pass: all 9 screens × 2 viewports (1280×900 desktop,
+390×844 mobile) captured, zero console errors on any of the 18, zero
+horizontal overflow (all mobile captures exactly 390px wide, heights vary
+genuinely by content — confirmed via reading PNG IHDR dimensions directly,
+not eyeballing, same discipline as every prior screenshot pass this
+session). Refreshed the repo-root `screenshots/` folder (gitignored, not
+committed) with the new design at 390×844 for the coordinator/user to see
+directly. `npx tsc --noEmit`, `npm run build` (main chunk ~312KB, no
+chunk-size regression), and the full vitest suite (203 tests, un-touched
+by this pass — pure CSS/markup) all clean/green.
+
+**Self-critique, honestly stated:** the carbon-fiber texture and the real
+condensed/technical typeface are both real but subtle-to-invisible in a
+downscaled screenshot at this viewport — the actual felt difference will
+read stronger on a real device at native resolution than in anything I
+could verify myself this session. Did not touch `CompoundChip.tsx` (kept
+circular, per CLAUDE.md's real-world tyre-marking convention — an angular
+chip would break that specific metaphor) or any of the four fixed
+status/compound color palettes. `StrategyBattleScreen.tsx`'s own stint-card
+markup (distinct from `StrategyCard` on the Comparison screen) didn't get
+the `.pit-hud-text` heading treatment in this pass — lower priority given
+time budget, flagged as a natural follow-up, not a correctness gap.

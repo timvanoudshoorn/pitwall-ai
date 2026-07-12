@@ -39,8 +39,27 @@
   --color-tyre-inter: #16a34a;
   --color-tyre-wet: #3b82f6;
 
+  /*
+   * Body/UI text stack — unchanged, safe system sans.
+   */
   --font-display: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+
+  /*
+   * "HUD" stack — headers/eyebrows/labels only, never body copy or numeric
+   * data (.tabular below is untouched — CLAUDE.md's numeric-integrity rule
+   * is non-negotiable). Condensed + heavy weight is the load-bearing part
+   * of the EA F1 menu reference (bold/condensed/often-italic display type
+   * for headers), not a webfont: both entries are fonts the OS ships,
+   * addressed by CSS family name only, zero network fetch —
+   * "Bahnschrift" is Windows' built-in DIN-style condensed variable font;
+   * "SF Compact Display"/"SF Compact" are Apple's built-in condensed
+   * system faces (this app's real deployed target is a Capacitor iOS
+   * WKWebView, where this resolves for real). Falls through to the
+   * regular display stack condensed via font-stretch on any platform
+   * without either (e.g. desktop Chrome on Linux/older Windows).
+   */
+  --font-hud: "Bahnschrift", "SF Compact Display", "SF Compact", "Segoe UI Semibold", var(--font-display);
 }
 
 html,
@@ -64,6 +83,20 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Display/HUD heading treatment — bold condensed italic, per the EA F1
+ * menu reference (angular/technical character, not a standard sans at
+ * regular weight). Used for Panel eyebrows/titles, the TopBar wordmark,
+ * NavRail labels, section headings — never body copy or .tabular numeric
+ * readouts, which keep their own dedicated stacks/weights untouched.
+ */
+.pit-hud-text {
+  font-family: var(--font-hud);
+  font-stretch: condensed;
+  font-style: italic;
+  font-weight: 700;
+}
+
 ::selection {
   background: var(--color-pit-accent-dim);
   color: white;
@@ -73,4 +106,92 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-pit-border-strong) transparent;
+}
+
+/*
+ * Carbon-fiber panel texture — subtle basket-weave via CSS gradients (no
+ * image asset, no network fetch). EA F1 menus lean on a technical
+ * material texture rather than flat solid panel color; kept low-opacity
+ * (~2%) so it reads as material grain, not decoration that fights text
+ * contrast — verified legible over both pit-panel and pit-panel-raised.
+ */
+.pit-carbon {
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 5px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 5px);
+}
+
+/*
+ * Angular corner-cut geometry — the load-bearing "EA F1 menu, not a
+ * generic dark dashboard" signal. Two opposite corners cut on a diagonal
+ * (directional/aggressive, matching real F1-game panel chrome) rather than
+ * all four (which would just read as an octagon). Border/background clip
+ * to this same path automatically since clip-path applies after paint.
+ * Two sizes: -lg for top-level panels, -sm for interactive card chrome
+ * (compact enough not to eat card padding at mobile widths).
+ */
+.pit-clip-lg {
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+.pit-clip-sm {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+/*
+ * Accent glow underline — the "sharp accent line with a glow/gradient
+ * edge on active/selected elements" HUD convention, replacing a flat
+ * solid-fill selection state. Gradient fades to transparent at both ends
+ * (never a hard-edged block) with a soft accent-colored glow beneath.
+ */
+.pit-accent-edge {
+  position: relative;
+}
+.pit-accent-edge::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-pit-accent), transparent);
+  box-shadow: 0 0 8px 1px color-mix(in oklab, var(--color-pit-accent) 70%, transparent);
+}
+
+/*
+ * Motion system — tasteful, not gratuitous (this is an engineering tool).
+ * Every keyframe/transition here is gated behind prefers-reduced-motion
+ * below. Panels reveal with a short fade+rise on mount (chart/data-load
+ * feel); interactive elements get a snappy press-down instead of relying
+ * on color transitions alone.
+ */
+@keyframes pit-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.pit-panel-in {
+  animation: pit-panel-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pit-pressable {
+  transition: transform 120ms ease, border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+.pit-pressable:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pit-panel-in {
+    animation: none;
+  }
+  .pit-pressable,
+  .pit-pressable:active {
+    transition: none;
+    transform: none;
+  }
 }

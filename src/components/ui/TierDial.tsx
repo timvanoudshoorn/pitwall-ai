@@ -50,10 +50,10 @@ export function TierDial({ value, onChange }: TierDialProps) {
   return (
     <div className="select-none">
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="tabular text-[10px] font-semibold tracking-[0.16em] text-pit-text-muted uppercase">
+        <span className="pit-hud-text not-italic text-[10px] tracking-[0.16em] text-pit-text-muted uppercase">
           Performance Tier
         </span>
-        <span className="tabular text-sm font-bold text-pit-accent">
+        <span className="pit-hud-text text-base text-pit-accent">
           {PERFORMANCE_TIERS[activeIndex].label}
         </span>
       </div>
@@ -70,11 +70,11 @@ export function TierDial({ value, onChange }: TierDialProps) {
         onKeyDown={handleKeyDown}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        className="relative h-11 cursor-pointer touch-none rounded-sm border border-pit-border bg-pit-bg outline-none focus-visible:ring-2 focus-visible:ring-pit-accent"
+        className="pit-clip-sm relative h-11 cursor-pointer touch-none border border-pit-border bg-pit-bg outline-none focus-visible:ring-2 focus-visible:ring-pit-accent"
       >
         {/* Fill */}
         <div
-          className="absolute inset-y-0 left-0 rounded-sm bg-pit-accent-dim/40 transition-[width] duration-150"
+          className="absolute inset-y-0 left-0 bg-pit-accent-dim/40 transition-[width] duration-150"
           style={{ width: `${fillPct}%` }}
         />
 
@@ -83,7 +83,7 @@ export function TierDial({ value, onChange }: TierDialProps) {
           {PERFORMANCE_TIERS.map((t, i) => (
             <div
               key={t.id}
-              className={`flex items-center justify-center border-r border-pit-border/60 text-[11px] font-bold tracking-wide last:border-r-0 ${
+              className={`pit-hud-text not-italic flex items-center justify-center border-r border-pit-border/60 text-[11px] tracking-wide last:border-r-0 ${
                 i <= activeIndex ? 'text-pit-text' : 'text-pit-text-muted'
               }`}
             >

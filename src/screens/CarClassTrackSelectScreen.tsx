@@ -24,13 +24,13 @@ export function CarClassTrackSelectScreen({ selection, onChange }: CarClassTrack
                 key={c.id}
                 type="button"
                 onClick={() => onChange({ carClassId: c.id })}
-                className={`rounded-sm border p-3 text-left transition-colors ${
+                className={`pit-clip-sm pit-pressable relative border p-3 text-left ${
                   isActive
-                    ? 'border-pit-accent bg-pit-panel-raised'
+                    ? 'pit-accent-edge border-pit-accent bg-pit-panel-raised'
                     : 'border-pit-border bg-pit-bg hover:border-pit-border-strong'
                 }`}
               >
-                <div className={`text-sm font-bold ${isActive ? 'text-pit-accent' : 'text-pit-text'}`}>
+                <div className={`pit-hud-text text-sm ${isActive ? 'text-pit-accent' : 'text-pit-text'}`}>
                   {c.shortName}
                 </div>
                 {/* line-clamp caps card height on mobile regardless of description length — a hard backstop on top of dataAdapters.ts's firstSentence() truncation, not a replacement for it (full text still available via the title attribute). */}
@@ -62,9 +62,9 @@ export function CarClassTrackSelectScreen({ selection, onChange }: CarClassTrack
                 key={t.id}
                 type="button"
                 onClick={() => onChange({ trackId: t.id })}
-                className={`flex flex-col items-center gap-1.5 rounded-sm border p-3 transition-colors ${
+                className={`pit-clip-sm pit-pressable relative flex flex-col items-center gap-1.5 border p-3 ${
                   isActive
-                    ? 'border-pit-accent bg-pit-panel-raised'
+                    ? 'pit-accent-edge border-pit-accent bg-pit-panel-raised'
                     : 'border-pit-border bg-pit-bg hover:border-pit-border-strong'
                 }`}
               >
@@ -78,7 +78,7 @@ export function CarClassTrackSelectScreen({ selection, onChange }: CarClassTrack
                   />
                 </svg>
                 <div className="text-center">
-                  <div className={`text-xs font-bold ${isActive ? 'text-pit-accent' : 'text-pit-text'}`}>{t.name}</div>
+                  <div className={`pit-hud-text text-xs ${isActive ? 'text-pit-accent' : 'text-pit-text'}`}>{t.name}</div>
                   <div className="tabular mt-0.5 flex items-center justify-center gap-1 text-[10px] text-pit-text-muted">
                     <MapPin size={10} /> {t.country}
                   </div>

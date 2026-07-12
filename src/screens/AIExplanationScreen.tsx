@@ -5,54 +5,9 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import { NoComparisonNotice } from '../components/ui/NoComparisonNotice';
 import { useStrategyComparison } from '../lib/useStrategyComparison';
 import { resolveTelemetryContext } from '../lib/raceSimAdapter';
-import { buildPrompt, buildTrackReferenceFacts } from '../ai';
+import { buildPrompt, buildTrackReferenceFacts, generateTemplateExplanation } from '../ai';
 import type { AppSelection } from '../types/session';
-import type { ExplanationMode, StrategyCandidate, StrategyComparison } from '../ai/types';
-import type { TelemetryImportResult } from '../sim/telemetry';
-
-/**
- * Deterministic, template-built stand-in for ai's real generateExplanation()
- * output — NOT an LLM call. There is no safe place to hold the Claude API
- * key in this Vite browser bundle yet (see src/ai/client.ts's deployment
- * note; this is an open infra decision, not visual's or ai's to make
- * unilaterally). Every number used here is read directly off the real
- * StrategyComparison this screen is given, so the *content* is live even
- * though the *generation* isn't — clearly labeled as such in the UI rather
- * than presented as if it were a real model response.
- */
-function buildTemplateExplanation(
-  mode: ExplanationMode,
-  comparison: StrategyComparison,
-  telemetry: TelemetryImportResult | null,
-): string {
-  const { raceContext, strategies, recommendedStrategyId, marginAnalysis } = comparison;
-  const recommended = strategies.find((s) => s.id === recommendedStrategyId) as StrategyCandidate;
-  const stopWord = (s: StrategyCandidate) => `${s.numStops}-stop`;
-  // Applied identically to every candidate (see telemetryFacts.ts's hallucination-risk note this
-  // mirrors) — worth a caveat, but never framed as explaining why one strategy beats another.
-  const telemetryNote = telemetry
-    ? ` Times above already reflect your own recorded pace (${telemetry.personalPaceOffsetSec > 0 ? '+' : ''}${telemetry.personalPaceOffsetSec.toFixed(2)}s/lap vs the class/tier assumption, ${telemetry.confidence} confidence), applied equally to every candidate — it doesn't change which strategy wins.`
-    : '';
-
-  if (mode === 'why_not_alternative') {
-    const [idA, idB] = marginAnalysis.closestPairIds;
-    const a = strategies.find((s) => s.id === idA) as StrategyCandidate;
-    const b = strategies.find((s) => s.id === idB) as StrategyCandidate;
-    const [winner, loser] = a.deltaToBestSeconds <= b.deltaToBestSeconds ? [a, b] : [b, a];
-    if (marginAnalysis.isCloseCall) {
-      return `"${winner.id}" and "${loser.id}" are separated by only ${marginAnalysis.deltaSeconds.toFixed(1)}s over ${raceContext.totalLaps} laps at ${raceContext.trackName} — inside this model's noise floor, so treat it as a genuine tradeoff rather than "${loser.id}" being wrong. "${winner.id}" pits at lap ${winner.pitStops[0]?.lap ?? '?'}; "${loser.id}" pits at lap ${loser.pitStops[0]?.lap ?? '?'}. With safety-car probability modeled at ${raceContext.safetyCarProbabilityPct}% this race, the earlier stop banks a cheaper caution-period pit if the SC comes out first; the later stop keeps fresher rubber for the run to the flag if it doesn't.${telemetryNote}`;
-    }
-    return `"${loser.id}" loses to "${winner.id}" by ${loser.deltaToBestSeconds.toFixed(1)}s over the full ${raceContext.totalLaps}-lap race distance at ${raceContext.trackName} — a clear enough margin that this isn't a coin-flip. ${winner.id} runs ${winner.numStops} stop(s) versus ${loser.id}'s ${loser.numStops}, and the predicted total race time gap (${winner.predictedTotalRaceTimeSeconds.toFixed(1)}s vs ${loser.predictedTotalRaceTimeSeconds.toFixed(1)}s) comes from that stop-count and tyre-life tradeoff, not from a single lap's pace.${telemetryNote}`;
-  }
-
-  const marginNote = marginAnalysis.isCloseCall
-    ? `It's close — the top two strategies are only ${marginAnalysis.deltaSeconds.toFixed(1)}s apart, so this is a genuine call rather than a runaway, and the box wall isn't overstating confidence here.`
-    : `The margin to the next-best option is a clear ${marginAnalysis.deltaSeconds.toFixed(1)}s, so this isn't a close call.`;
-
-  return `Box wall recommends the ${stopWord(recommended)}, pitting ${recommended.pitStops.map((p) => `lap ${p.lap}`).join(' and ')}, for a predicted total race time of ${(recommended.predictedTotalRaceTimeSeconds / 60).toFixed(1)} minutes over ${raceContext.totalLaps} laps at ${raceContext.trackName}.
-
-${marginNote} Safety-car probability is modeled at ${raceContext.safetyCarProbabilityPct}% this race and rain probability at ${raceContext.weather.rainProbabilityPct}% — both are whole-race likelihoods, not a forecast of which lap either arrives, so treat them as contingencies to react to rather than a fixed plan.${telemetryNote}`;
-}
+import type { ExplanationMode } from '../ai/types';
 
 export function AIExplanationScreen({ selection }: { selection: AppSelection }) {
   const [mode, setMode] = useState<ExplanationMode>('recommendation');
@@ -70,7 +25,9 @@ export function AIExplanationScreen({ selection }: { selection: AppSelection }) 
     const telemetryApplied = comparison.assumptionsUsed.includes('personal_pace_telemetry_applied');
     const telemetry = telemetryApplied ? resolveTelemetryContext(selection) : null;
     const prompt = buildPrompt(mode, comparison, undefined, referenceFacts, telemetry ?? undefined);
-    const text = buildTemplateExplanation(mode, comparison, telemetry);
+    // ai's real template generator (src/ai/templateExplain.ts) as of their 2026-07-12 rewrite —
+    // terser, real race-engineer voice, replaces the inline version that used to live here.
+    const text = generateTemplateExplanation(mode, comparison, referenceFacts, telemetry ?? undefined);
     return { prompt, text };
   }, [comparison, mode, selection]);
 
@@ -154,8 +111,8 @@ function ModeTab({ active, onClick, children }: { active: boolean; onClick: () =
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-sm border px-3 py-1.5 text-xs font-semibold transition-colors ${
-        active ? 'border-pit-accent bg-pit-panel-raised text-pit-accent' : 'border-pit-border text-pit-text-secondary hover:border-pit-border-strong'
+      className={`pit-clip-sm pit-pressable relative px-3 py-1.5 text-xs pit-hud-text not-italic ${
+        active ? 'pit-accent-edge border border-pit-accent bg-pit-panel-raised text-pit-accent' : 'border border-pit-border text-pit-text-secondary hover:border-pit-border-strong'
       }`}
     >
       {children}

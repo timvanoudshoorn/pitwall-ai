@@ -19,9 +19,9 @@ export function MainMenuScreen() {
       <div className="flex flex-col items-center gap-3 text-center">
         <div className="flex items-center gap-2 text-pit-accent">
           <Radio size={28} strokeWidth={2.5} />
-          <span className="text-2xl font-bold tracking-[0.14em]">PITWALL AI</span>
+          <span className="pit-hud-text text-3xl tracking-[0.06em]">PITWALL AI</span>
         </div>
-        <p className="tabular text-xs font-semibold tracking-[0.2em] text-pit-text-muted uppercase">
+        <p className="pit-hud-text not-italic text-xs tracking-[0.2em] text-pit-text-muted uppercase">
           Race Strategy Console
         </p>
       </div>
@@ -30,14 +30,14 @@ export function MainMenuScreen() {
         <div className="flex flex-col gap-2.5">
           <Link
             to="/select"
-            className="group flex items-center justify-between gap-3 rounded-sm border border-pit-accent bg-pit-panel-raised px-4 py-4 transition-colors hover:bg-pit-accent/10"
+            className="pit-clip-sm pit-pressable pit-accent-edge group relative flex items-center justify-between gap-3 border border-pit-accent bg-pit-panel-raised px-4 py-4 shadow-[0_0_16px_-6px_var(--color-pit-accent)] hover:bg-pit-accent/10"
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-pit-accent text-pit-accent">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-pit-accent text-pit-accent">
                 <FlagTriangleRight size={18} strokeWidth={2.5} />
               </span>
               <div className="text-left">
-                <div className="text-sm font-bold text-pit-text">New Strategy</div>
+                <div className="pit-hud-text text-base text-pit-text">New Strategy</div>
                 <div className="text-[11px] text-pit-text-secondary">
                   Set car class, performance tier, and track
                 </div>
@@ -76,12 +76,12 @@ function PlaceholderRow({
   sublabel: string;
 }) {
   return (
-    <div className="flex cursor-not-allowed items-center gap-3 rounded-sm border border-pit-border bg-pit-bg px-4 py-4 opacity-50">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-pit-border text-pit-text-muted">
+    <div className="pit-clip-sm flex cursor-not-allowed items-center gap-3 border border-pit-border bg-pit-bg px-4 py-4 opacity-50">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-pit-border text-pit-text-muted">
         <Icon size={18} strokeWidth={2} />
       </span>
       <div className="text-left">
-        <div className="text-sm font-bold text-pit-text-secondary">{label}</div>
+        <div className="pit-hud-text text-sm text-pit-text-secondary">{label}</div>
         <div className="text-[11px] text-pit-text-muted">{sublabel}</div>
       </div>
     </div>

@@ -115,17 +115,24 @@ function StrategyCard({ strategy, isRecommended }: { strategy: StrategyCandidate
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5">
+      {/*
+        flex-wrap (not a fixed single row) — this used to force every stint
+        chip onto one unbreakable line via flex-1 on each item, which was
+        fine at desktop card widths but clipped the last stint clean off
+        the card's edge on a real phone (a 3-stop card has 4 chips to fit).
+        Caught via mobile-viewport screenshots.
+      */}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
         {strategy.stints.map((stint, i) => (
-          <div key={i} className="flex flex-1 items-center gap-1.5">
-            <div className="flex flex-1 items-center gap-1.5 rounded-sm border border-pit-border bg-pit-panel px-2 py-1.5">
+          <div key={i} className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 rounded-sm border border-pit-border bg-pit-panel px-2 py-1.5">
               <CompoundChip compound={stint.compound} size="sm" />
-              <span className="tabular text-[11px] text-pit-text-secondary">
+              <span className="tabular text-[11px] whitespace-nowrap text-pit-text-secondary">
                 L{stint.startLap}–{stint.endLap}
               </span>
             </div>
             {i < strategy.stints.length - 1 && (
-              <span className="tabular text-[10px] text-pit-text-muted">
+              <span className="tabular text-[10px] whitespace-nowrap text-pit-text-muted">
                 {strategy.pitStops[i] ? `${strategy.pitStops[i].pitLossSeconds.toFixed(1)}s` : ''}
               </span>
             )}

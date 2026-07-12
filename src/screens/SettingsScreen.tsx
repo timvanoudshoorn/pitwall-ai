@@ -169,9 +169,16 @@ function PersonalPacePreview({ preview }: { preview: NonNullable<ReturnType<type
   );
 }
 
+/**
+ * Stacks label above value below `sm` — the side-by-side layout was
+ * forcing long values (e.g. the API-access row's full sentence) to wrap
+ * word-by-word against a squeezed remaining width on a real phone,
+ * producing an orphaned-word mess instead of the label/value pairing it
+ * was meant to read as. Caught via mobile-viewport screenshots.
+ */
 function SettingRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-pit-border py-2.5 text-sm last:border-b-0">
+    <div className="flex flex-col gap-0.5 border-b border-pit-border py-2.5 text-sm last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <span className="text-pit-text-secondary">{label}</span>
       <span className="tabular font-medium text-pit-text">{value}</span>
     </div>

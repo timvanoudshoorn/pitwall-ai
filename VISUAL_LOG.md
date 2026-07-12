@@ -327,3 +327,107 @@ Two small teammate-flagged fixes landed together:
   regression (main chunk 302KB — grew slightly since the landing screen
   now shares the real, larger `track-lap-reference.json` instead of the
   tiny hand-written mock, still well under the 500KB warning threshold).
+
+## 2026-07-12 — Real-device feedback: race-length bug + mobile viewport was never actually tested
+
+A user installed the app on their phone and reported (1) a factual bug in
+the race-distance options and (2) that it "looks ass" — after every prior
+verification pass in this log reported screens as checked/polished. Both
+addressed; (2) required admitting a real gap in how verification was done,
+not just fixing CSS, so it's documented in full below.
+
+**1. Race-distance options were wrong.** `RACE_LENGTHS`/`RaceParameters.raceLengthPct`
+had `[25, 50, 75, 100]` since the original scaffold — a guess, never
+sourced. F1 25 has no 75% option; the real set is 25/35/50/100%. Verified
+two ways before shipping the fix (coordinator explicitly asked not to
+take either source alone on faith): a web search (EA Forums threads) and
+an independent re-check from the data teammate specifically re-searching
+EA Forums rather than trusting the coincidence — both agreed, no
+conflicting source found. Fixed in `types/session.ts` (`raceLengthPct: 25
+| 35 | 50 | 100`) and `RaceParametersScreen.tsx`'s `RACE_LENGTHS` array.
+
+**2. The mobile gap — what was actually wrong, and why prior verification missed it.**
+
+Two compounding problems, one bug and one methodology gap:
+
+- **The real bug: the app has never fit inside a real phone's viewport
+  width.** At 390px (iPhone-width), the page rendered at ~503px wide —
+  every screen required invisible horizontal scroll on load, silently
+  clipping the right ~110px of content including part of the persistent
+  TopBar. Root cause: `TopBar.tsx`'s summary-field row (`CLASS`/`TIER`/
+  `TRACK`/`LAPS`) was a non-wrapping flex row whose children had no
+  `min-w-0` — a classic flexbox default (a flex child won't shrink below
+  its content's intrinsic width unless told to), so a long value like
+  "Silverstone Circuit" forced the whole row, and via it the header, and
+  via IT the entire page, wider than the viewport instead of wrapping.
+  This was invisible on every desktop-width screenshot taken all session
+  (1400px has slack to spare) and is exactly the kind of bug that only
+  shows up once you actually constrain to a phone width — which nothing
+  in this session had done before now.
+- **Compounding real bugs found via the same mobile screenshots**:
+  `StrategyComparisonScreen`'s stint-chip row (a 3-stop card has 4 chips)
+  used the same unwrapped-flex pattern and was clipping the last chip
+  clean off the card's right edge — content spilling past its own
+  border, not just tight. `SettingsScreen`'s `SettingRow` label/value
+  `justify-between` row doesn't stack at narrow widths, so the longer
+  values (e.g. the AI-access sentence) wrapped word-by-word into an
+  orphaned mess instead of reading as a label/value pair. `NavRail` was
+  a fixed 76px regardless of viewport — never itself the overflow
+  source, but eating ~20% of a 390px screen unconditionally compounded
+  every other width problem.
+- **The methodology gap, which is the more important finding**: fixing
+  the above required first fixing my OWN verification tooling. Every
+  screenshot taken this session (and, per VISUAL_LOG's history, likely
+  every prior session too) used `page.screenshot({ fullPage: true })`,
+  which reports it captured the whole page but silently did not:
+  `AppShell.tsx`'s outer container is `h-screen` (a fixed viewport-height
+  box) with only the inner `<main>` scrolling via `overflow-y-auto` —
+  Playwright's `fullPage` option measures `document`/`body` scroll
+  height, which never grows in this layout, since the *document* itself
+  never scrolls, only an inner div does. So every "verified" screenshot,
+  desktop included, was quietly truncated to exactly the viewport size
+  and never showed anything below the fold. It went unnoticed because at
+  1400x1000 most single-panel screens happened to fit anyway; the Select
+  screen (which has 3 stacked panels well past 1000px tall) should have
+  been the tell, but nobody compared image pixel dimensions to viewport
+  dimensions to catch it. Fixed the capture technique for this pass by
+  temporarily overriding `main`'s `overflow`/`height` via an injected
+  style tag before the real screenshot, forcing the document to its true
+  content height — confirmed working (image heights now vary correctly
+  by actual content per screen instead of every one being exactly
+  viewport-sized). Also hit and fixed a subtler CSS trap while adding an
+  `overflow-x-hidden` safety net to the shell: adding `overflow-x-hidden`
+  alone to a box that never sets `overflow-y` causes the browser to
+  force-compute `overflow-y` to `auto` too (an overflow-axis-consistency
+  rule in the CSS spec), which silently created a second vertical-scroll
+  boundary at the shell level and re-broke the very screenshot fix above
+  — caught because captured heights collapsed back to exactly the
+  viewport the moment that line was added. Resolved by keeping the
+  safety net only on `main`, which already declares both axes explicitly.
+- **Fixes**: `TopBar.tsx` — flex-wrap row, `min-w-0` + `truncate` on
+  value spans (the actual fix), header height changed from fixed `h-12`
+  to `min-h-12` so a wrapped second line doesn't clip. `NavRail.tsx` —
+  narrower by default (`w-[60px]`, widening to the original 76px at
+  `sm`+), smaller icon/text at the base size — still always-visible
+  icon+label per CLAUDE.md's explicit mandate, just responsively sized
+  rather than fixed. `StrategyComparisonScreen.tsx` — stint-chip row
+  `flex-wrap` instead of forced single-line. `SettingsScreen.tsx` —
+  `SettingRow` stacks label above value below `sm`. `AppShell.tsx` —
+  `overflow-x-hidden` safety net on `main` only (see above for why not
+  on the outer shell).
+- Re-verified full-content (not viewport-truncated) screenshots at both
+  390x844 and 1400x1000 across all 8 screens after the fix: mobile image
+  widths are now exactly 390px on every screen (zero horizontal
+  overflow, confirmed via reading PNG header dimensions directly rather
+  than eyeballing), TopBar wraps cleanly to two lines with every field
+  fully visible, the 3-stop stint row wraps instead of clipping, Settings
+  rows stack cleanly. Desktop screenshots are pixel-identical to before
+  the responsive changes (confirmed no regression at 1400px). Zero
+  console errors across all 8 routes at both viewports. `npx tsc
+  --noEmit` and `npm run build` both clean, no chunk-size regression.
+- Not touched: `TierDial`'s detent labels look tight at 390px in a
+  downscaled preview image but I don't have strong evidence they're
+  actually clipped at full resolution — didn't want to modify a
+  component CLAUDE.md explicitly protects ("don't regress it back to a
+  dropdown") on a hunch. Flagging as a possible follow-up if the user
+  still sees an issue there specifically, rather than guessing at a fix.

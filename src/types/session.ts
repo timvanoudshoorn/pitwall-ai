@@ -48,7 +48,13 @@ export interface CarClassMeta {
 }
 
 export interface RaceParameters {
-  raceLengthPct: 25 | 50 | 75 | 100;
+  /**
+   * F1 25's actual race-distance options — 25/35/50/100%, not the
+   * initial scaffold's guessed 25/50/75/100% (F1 25 has no 75% option;
+   * verified against real game UI/community docs 2026-07-12, flagged by
+   * a real user on-device). See RaceParametersScreen.tsx.
+   */
+  raceLengthPct: 25 | 35 | 50 | 100;
   qualifyingFormat: QualifyingFormat;
   weather: WeatherCondition;
   rainProbabilityPct: number;

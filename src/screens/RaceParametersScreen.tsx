@@ -9,7 +9,8 @@ interface RaceParametersScreenProps {
   onChange: (patch: Partial<AppSelection>) => void;
 }
 
-const RACE_LENGTHS: AppSelection['raceParameters']['raceLengthPct'][] = [25, 50, 75, 100];
+/** F1 25's real race-distance options (25/35/50/100%) — the initial scaffold had a wrong 75% guess, see types/session.ts. */
+const RACE_LENGTHS: AppSelection['raceParameters']['raceLengthPct'][] = [25, 35, 50, 100];
 
 const QUALI_FORMATS: { id: QualifyingFormat; label: string; description: string }[] = [
   { id: 'one_shot', label: 'One-Shot Qualifying', description: 'Single flying lap, no second chances.' },
